@@ -107,7 +107,6 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
           // Position Top or Bottom based on step preference
           if (step.position === 'top') {
               // Target is likely at bottom, place card above it
-              // We calculate "bottom" distance from screen bottom
               cardStyle.bottom = (window.innerHeight - targetRect.top) + 20;
           } else {
               // Target is likely at top, place card below it
@@ -115,15 +114,39 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
           }
 
       } else {
-          // Desktop: Exact positioning anchored to target
+          // Desktop: Smart positioning with edge detection
+          const CARD_MAX_WIDTH = 384; // Matches max-w-sm (24rem)
+          const SCREEN_MARGIN = 24;
+          
+          let leftPos = targetRect.left + (targetRect.width / 2);
+          let transformX = -50; // Start centered
+
+          // 1. Calculate theoretical edges if centered
+          const theoreticalRight = leftPos + (CARD_MAX_WIDTH / 2);
+          const theoreticalLeft = leftPos - (CARD_MAX_WIDTH / 2);
+          const screenWidth = window.innerWidth;
+
+          // 2. Adjust if overflowing right
+          if (theoreticalRight > screenWidth - SCREEN_MARGIN) {
+              // Anchor the right side of the card to the screen edge
+              leftPos = screenWidth - SCREEN_MARGIN;
+              transformX = -100; // Shift fully left from the anchor point
+          } 
+          // 3. Adjust if overflowing left
+          else if (theoreticalLeft < SCREEN_MARGIN) {
+              // Anchor the left side of the card to the screen edge
+              leftPos = SCREEN_MARGIN;
+              transformX = 0; // No shift, start from anchor point
+          }
+
           cardStyle = {
               position: 'absolute',
               zIndex: 60,
               width: '100%',
-              maxWidth: '384px', // max-w-sm
+              maxWidth: `${CARD_MAX_WIDTH}px`, // max-w-sm
               top: step.position === 'top' ? targetRect.top - 10 : (targetRect.bottom + 20),
-              left: targetRect.left + (targetRect.width/2),
-              transform: step.position === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)'
+              left: leftPos,
+              transform: step.position === 'top' ? `translate(${transformX}%, -100%)` : `translate(${transformX}%, 0)`
           };
       }
   } else {

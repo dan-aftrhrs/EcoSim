@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SpeciesType, GameConfig, SpawnSettings, SPECIES_LIST, SPECIES_CONFIG } from '../types';
 
@@ -68,8 +69,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ spawnConfig, gameC
                             </select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                             <div><label className="text-xs font-bold text-slate-400 mb-1 block">Lifespan</label><input type="range" min="0.5" max="50" step="0.5" value={gameConfig.species[selectedSpecies].maxAge} onChange={(e) => onSpeciesAttributeChange(selectedSpecies, 'maxAge', Number(e.target.value))} className="w-full accent-blue-500" /></div>
-                             <div><label className="text-xs font-bold text-slate-400 mb-1 block">Repro Cost</label><input type="range" min="0" max="100" value={gameConfig.species[selectedSpecies].reproCost} onChange={(e) => onSpeciesAttributeChange(selectedSpecies, 'reproCost', Number(e.target.value))} className="w-full accent-blue-500" /></div>
+                             <div>
+                                <label className="text-xs font-bold text-slate-400 mb-1 block">Max HP / Energy</label>
+                                <input type="range" min="5" max="200" step="5" value={gameConfig.species[selectedSpecies].maxHp} onChange={(e) => onSpeciesAttributeChange(selectedSpecies, 'maxHp', Number(e.target.value))} className="w-full accent-blue-500" />
+                                <div className="text-right text-xs font-mono text-slate-500 mt-1">{gameConfig.species[selectedSpecies].maxHp}</div>
+                             </div>
+                             <div>
+                                <label className="text-xs font-bold text-slate-400 mb-1 block">Lifespan (Years)</label>
+                                <input type="range" min="0.5" max="50" step="0.5" value={gameConfig.species[selectedSpecies].maxAge} onChange={(e) => onSpeciesAttributeChange(selectedSpecies, 'maxAge', Number(e.target.value))} className="w-full accent-blue-500" />
+                                <div className="text-right text-xs font-mono text-slate-500 mt-1">{gameConfig.species[selectedSpecies].maxAge} yrs</div>
+                             </div>
+                             <div>
+                                <label className="text-xs font-bold text-slate-400 mb-1 block">Repro Cost</label>
+                                <input type="range" min="0" max="100" value={gameConfig.species[selectedSpecies].reproCost} onChange={(e) => onSpeciesAttributeChange(selectedSpecies, 'reproCost', Number(e.target.value))} className="w-full accent-blue-500" />
+                                <div className="text-right text-xs font-mono text-slate-500 mt-1">{gameConfig.species[selectedSpecies].reproCost}</div>
+                             </div>
                         </div>
                     </div>
                 )}

@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { Mountain, Zap, Skull, RotateCcw, FileText, AlertTriangle, Clock, Activity, ArrowRight, ChevronRight, ChevronLeft, Leaf, Bug, Swords, Crown, Snowflake, Trophy, Save } from 'lucide-react';
+import { Mountain, Zap, Skull, RotateCcw, FileText, AlertTriangle, Clock, Activity, ArrowRight, ChevronRight, ChevronLeft, Leaf, Bug, Swords, Crown, Snowflake, Trophy, Save, Globe, Smartphone } from 'lucide-react';
 import { SPECIES_CONFIG } from '../types';
+import { supabase, fetchGlobalScores, submitGlobalScore, HighScoreEntry } from '../services/supabaseClient';
 
 const ONBOARDING_STEPS = [
   {
@@ -162,65 +164,106 @@ export const LandingPage = ({ onStart }: { onStart: () => void }) => {
   );
 };
 
-// --- HIGHSCORE LOGIC ---
-interface HighScore {
-  name: string;
-  score: number; // totalTicks
-  year: number;
-  date: string;
-}
-
+// --- LOCAL STORAGE LOGIC ---
 const STORAGE_KEY = 'eco_sim_highscores';
-
-const getHighscores = (): HighScore[] => {
+const getLocalHighscores = (): HighScoreEntry[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    return [];
-  }
+  } catch (e) { return []; }
 };
-
-const saveHighscore = (entry: HighScore) => {
+const saveLocalHighscore = (entry: HighScoreEntry) => {
   try {
-    const current = getHighscores();
+    const current = getLocalHighscores();
     const updated = [...current, entry].sort((a, b) => b.score - a.score).slice(0, 5);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return updated;
-  } catch (e) {
-    return [];
-  }
+  } catch (e) { return []; }
 };
 
 export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, onReset, onContinue }: any) => {
     const [playerName, setPlayerName] = useState('');
-    const [scores, setScores] = useState<HighScore[]>([]);
+    const [scores, setScores] = useState<HighScoreEntry[]>([]);
     const [isHighScore, setIsHighScore] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const isGlobal = !!supabase; // Check if Supabase is connected
 
     useEffect(() => {
-        const currentScores = getHighscores();
-        setScores(currentScores);
-        // Check if current run qualifies (Top 5 or list has space)
-        if (!submitted) {
-            if (currentScores.length < 5 || totalTicks > currentScores[currentScores.length - 1].score) {
-                setIsHighScore(true);
+        const loadScores = async () => {
+            setLoading(true);
+            let currentScores: HighScoreEntry[] = [];
+            
+            try {
+                if (isGlobal) {
+                    currentScores = await fetchGlobalScores();
+                } else {
+                    currentScores = getLocalHighscores();
+                }
+            } catch (e) {
+                console.error("Failed to load scores", e);
+                currentScores = [];
             }
-        }
-    }, [totalTicks, submitted]);
+            
+            // Ensure currentScores is an array
+            const safeScores = currentScores || [];
+            setScores(safeScores);
+            setLoading(false);
 
-    const handleSubmitScore = () => {
+            // Check Qualification
+            if (!submitted) {
+                 const limit = isGlobal ? 10 : 5;
+                 // If leaderboard is not full, any score qualifies
+                 if (safeScores.length < limit) {
+                     setIsHighScore(true);
+                 } else {
+                     // Otherwise must beat the lowest score
+                     const minScore = safeScores[safeScores.length - 1]?.score || 0;
+                     if (totalTicks > minScore) {
+                         setIsHighScore(true);
+                     }
+                 }
+            }
+        };
+        loadScores();
+    }, [isGlobal, submitted, totalTicks]);
+
+    const handleSubmitScore = async () => {
         if (!playerName.trim()) return;
-        const entry: HighScore = {
+        setLoading(true);
+
+        const entry: HighScoreEntry = {
             name: playerName.trim().slice(0, 12),
             score: totalTicks,
-            year: year,
-            date: new Date().toLocaleDateString()
+            year: year
         };
-        const updated = saveHighscore(entry);
-        setScores(updated);
+
+        if (isGlobal) {
+            const result = await submitGlobalScore(entry);
+            if (!result) {
+                alert("Error submitting score. Please check your network connection or API keys.");
+                setLoading(false);
+                return;
+            }
+        } else {
+            saveLocalHighscore(entry);
+        }
+        
         setSubmitted(true);
         setIsHighScore(false);
+        // Reload scores
+        try {
+            if (isGlobal) {
+                 const updated = await fetchGlobalScores();
+                 setScores(updated || []);
+            } else {
+                 setScores(getLocalHighscores());
+            }
+        } catch(e) {
+             console.error("Error refreshing scores", e);
+        }
+        setLoading(false);
     };
 
     return (
@@ -263,9 +306,16 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
 
           {/* HIGHSCORE BOARD */}
           <div className="w-full bg-slate-800/50 rounded-xl border border-slate-700 p-4 mb-4 shrink-0">
-              <h3 className="text-sm font-bold text-teal-400 flex items-center justify-center gap-2 mb-3">
-                  <Trophy size={16} /> TOP 5 SURVIVORS
-              </h3>
+              <div className="flex justify-between items-center mb-3">
+                   <h3 className="text-sm font-bold text-teal-400 flex items-center gap-2">
+                       <Trophy size={16} /> 
+                       {isGlobal ? "GLOBAL LEADERBOARD" : "LOCAL RANKING"}
+                   </h3>
+                   <span className="text-[10px] text-slate-500 uppercase flex items-center gap-1">
+                       {isGlobal ? <Globe size={10} /> : <Smartphone size={10} />}
+                       {isGlobal ? "Online" : "Offline"}
+                   </span>
+              </div>
               
               {isHighScore && !submitted ? (
                   <div className="mb-4 bg-teal-900/20 border border-teal-500/30 p-3 rounded-lg animate-pulse">
@@ -277,22 +327,24 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
                             onChange={(e) => setPlayerName(e.target.value)}
                             maxLength={12}
                             placeholder="NAME"
+                            disabled={loading}
                             className="bg-slate-900 border border-slate-600 rounded px-3 py-1 text-white text-sm w-full focus:outline-none focus:border-teal-400 font-mono uppercase"
                           />
                           <button 
                             onClick={handleSubmitScore}
-                            disabled={!playerName}
+                            disabled={!playerName || loading}
                             className="bg-teal-500 hover:bg-teal-400 text-slate-900 p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                              <Save size={18} />
+                              {loading ? <Activity size={18} className="animate-spin" /> : <Save size={18} />}
                           </button>
                       </div>
                   </div>
               ) : null}
 
               <div className="space-y-1">
-                  {scores.length === 0 && <p className="text-xs text-slate-500 italic py-2">No records found locally.</p>}
-                  {scores.map((s, i) => (
+                  {loading && <div className="text-xs text-slate-500 italic py-4">Connecting to network...</div>}
+                  {!loading && (scores || []).length === 0 && <p className="text-xs text-slate-500 italic py-2">No records found.</p>}
+                  {!loading && (scores || []).map((s, i) => (
                       <div key={i} className={`flex justify-between items-center p-2 rounded text-xs ${s.score === totalTicks && submitted && s.name === playerName ? 'bg-teal-500/20 border border-teal-500/50' : 'bg-slate-900/40'}`}>
                           <div className="flex items-center gap-3">
                               <span className={`font-mono font-bold w-4 ${i===0 ? 'text-yellow-400' : 'text-slate-500'}`}>#{i+1}</span>

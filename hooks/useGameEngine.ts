@@ -63,6 +63,7 @@ export const useGameEngine = () => {
   const isRunning = useRef(false);
   const seasonTickRef = useRef(0);
   const generationRef = useRef(0);
+  const hasStartedRef = useRef(false);
   
   // Refs for tracking news events to prevent spamming
   const lastOverpopLogRef = useRef<Record<SpeciesType, number>>({} as any);
@@ -101,7 +102,8 @@ export const useGameEngine = () => {
   }, [alienDeployed]);
 
   const initializeWorld = useCallback(() => {
-    const data = initializeWorldData(WIDTH, HEIGHT, spawnSettingsRef.current);
+    // Pass gameConfigRef.current so we can access maxHp settings
+    const data = initializeWorldData(WIDTH, HEIGHT, spawnSettingsRef.current, gameConfigRef.current);
     
     speciesRef.current.set(data.species);
     terrainRef.current.set(data.terrain);
@@ -117,14 +119,11 @@ export const useGameEngine = () => {
     ignoredExtinctionsRef.current.clear();
     setAlienDeployed(false);
     
-    // Initial Start Message
-    setNewsFeed([{
-        id: 'start-' + Date.now(),
-        text: "The simulation has started.",
-        type: 'info'
-    }]);
-    startUpTimeRef.current = Date.now();
-    lastLogSignatureRef.current = "The simulation has started.";
+    // Clear feed on reset/init
+    setNewsFeed([]);
+    hasStartedRef.current = false;
+    startUpTimeRef.current = 0;
+    lastLogSignatureRef.current = "";
 
     generationRef.current = 0;
     setGeneration(0);
@@ -151,7 +150,8 @@ export const useGameEngine = () => {
 
     // --- News Feed Logic ---
     const rawEvents: NewsItem[] = [];
-    const isCoolingDown = (Date.now() - startUpTimeRef.current) < 2000;
+    // Cooldown is strictly based on when Start was pressed (startUpTimeRef)
+    const isCoolingDown = startUpTimeRef.current > 0 && (Date.now() - startUpTimeRef.current) < 2000;
     
     // Allow news only after cooldown AND after 30 ticks (days)
     if (!isCoolingDown && generationRef.current > 30) {
@@ -286,7 +286,25 @@ export const useGameEngine = () => {
     if (isRunning.current) animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, [update]);
 
-  const start = useCallback(() => { if (!isRunning.current && !gameOver.isOver) { isRunning.current = true; gameLoop(); } }, [gameLoop, gameOver.isOver]);
+  const start = useCallback(() => { 
+    if (!isRunning.current && !gameOver.isOver) { 
+        // Initial Start Message on first play
+        if (!hasStartedRef.current) {
+            hasStartedRef.current = true;
+            startUpTimeRef.current = Date.now();
+            setNewsFeed([{
+                id: 'start-' + Date.now(),
+                text: "The simulation has started.",
+                type: 'info'
+            }]);
+            lastLogSignatureRef.current = "The simulation has started.";
+        }
+        
+        isRunning.current = true; 
+        gameLoop(); 
+    } 
+  }, [gameLoop, gameOver.isOver]);
+
   const continueSimulation = useCallback(() => {
      const currentStats = calculateStats(speciesRef.current);
      const livingSpecies = [SpeciesType.PLANT, SpeciesType.INSECT, SpeciesType.HERBIVORE, SpeciesType.PREDATOR, SpeciesType.APEX];

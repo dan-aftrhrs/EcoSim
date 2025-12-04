@@ -3,7 +3,7 @@ import { SpeciesType, TerrainType, GameConfig, GameModifiers, Season, SpawnSetti
 import { generateMap } from './noise';
 import { generateNeighborMap } from './simulation';
 
-export const initializeWorldData = (width: number, height: number, spawnSettings: SpawnSettings) => {
+export const initializeWorldData = (width: number, height: number, spawnSettings: SpawnSettings, config: GameConfig) => {
   const terrain = generateMap(width, height, Math.random() * 10000);
   const neighborMap = generateNeighborMap(width, height);
   const species = new Uint8Array(width * height);
@@ -44,7 +44,9 @@ export const initializeWorldData = (width: number, height: number, spawnSettings
     if (selectedSpecies !== SpeciesType.NONE) {
         species[i] = selectedSpecies;
         ages[i] = Math.floor(Math.random() * 50); 
-        energies[i] = selectedSpecies === SpeciesType.PLANT ? 10 : (40 + Math.floor(Math.random() * 30));
+        energies[i] = selectedSpecies === SpeciesType.PLANT 
+            ? config.species[SpeciesType.PLANT].maxHp 
+            : (40 + Math.floor(Math.random() * 30));
 
         if (selectedSpecies === SpeciesType.PREDATOR) {
             const packSize = 4;
@@ -231,7 +233,10 @@ export const updateWorld = (
                 spontChance *= modifiers.plantGrowthRate;
                 const t = terrain[i];
                 if ((t === TerrainType.FOREST || (t === TerrainType.GRASS && Math.random() < 0.5)) && Math.random() < spontChance) {
-                    nextSpecies[i] = SpeciesType.PLANT; nextAges[i] = 0; nextEnergies[i] = 10; occupied[i] = 1;
+                    nextSpecies[i] = SpeciesType.PLANT; 
+                    nextAges[i] = 0; 
+                    nextEnergies[i] = config.species[SpeciesType.PLANT].maxHp; 
+                    occupied[i] = 1;
                 }
              }
              continue;
@@ -244,7 +249,7 @@ export const updateWorld = (
                     const sStats = config.species[SpeciesType.PLANT];
                     if (ages[i] < sStats.maxAge * ticksPerYear) {
                         nextSpecies[i] = SpeciesType.PLANT; nextAges[i] = ages[i] + 1;
-                        nextEnergies[i] = Math.min(10, currentHealth + (isRegenTick ? 2.0 : 0.15));
+                        nextEnergies[i] = Math.min(sStats.maxHp, currentHealth + (isRegenTick ? 2.0 : 0.15));
                         occupied[i] = 1;
                         let spreadChance = sStats.spawnChance * modifiers.plantGrowthRate * 6.0;
                         if (season === Season.WINTER) spreadChance *= 0.2;
@@ -257,7 +262,9 @@ export const updateWorld = (
                              }
                              if (possibleSpots.length > 0) {
                                  const spot = possibleSpots[Math.floor(Math.random() * possibleSpots.length)];
-                                 nextSpecies[spot] = SpeciesType.PLANT; nextAges[spot] = 0; nextEnergies[spot] = 10; occupied[spot] = 1;
+                                 nextSpecies[spot] = SpeciesType.PLANT; nextAges[spot] = 0; 
+                                 nextEnergies[spot] = sStats.maxHp; 
+                                 occupied[spot] = 1;
                              }
                         }
                     }
@@ -274,7 +281,9 @@ export const updateWorld = (
                  if (occupied[i] === 0) { nextSpecies[i] = SpeciesType.CORPSE; nextEnergies[i] = decay; occupied[i] = 1; }
              } else {
                  if (occupied[i] === 0 && Math.random() < 0.50 && (terrain[i] === TerrainType.GRASS || terrain[i] === TerrainType.FOREST)) {
-                     nextSpecies[i] = SpeciesType.PLANT; nextAges[i] = 0; nextEnergies[i] = 10; occupied[i] = 1;
+                     nextSpecies[i] = SpeciesType.PLANT; nextAges[i] = 0; 
+                     nextEnergies[i] = config.species[SpeciesType.PLANT].maxHp; 
+                     occupied[i] = 1;
                  }
              }
              continue;
@@ -287,7 +296,9 @@ export const updateWorld = (
                 const targetS = species[nIdx];
                 
                 if (targetS === SpeciesType.CORPSE && occupied[nIdx] === 0) {
-                    nextSpecies[nIdx] = SpeciesType.PLANT; nextAges[nIdx] = 0; nextEnergies[nIdx] = 10; occupied[nIdx] = 1;
+                    nextSpecies[nIdx] = SpeciesType.PLANT; nextAges[nIdx] = 0; 
+                    nextEnergies[nIdx] = config.species[SpeciesType.PLANT].maxHp; 
+                    occupied[nIdx] = 1;
                 } 
                 else if (targetS !== SpeciesType.NONE && targetS !== SpeciesType.ALIEN && targetS !== SpeciesType.PLANT) {
                     if (isDominant[targetS]) { 
@@ -559,7 +570,7 @@ export const updateWorld = (
 
             const burn = 1 * modifiers.energyBurnRate * burnMod;
             const moveCost = (moveTarget !== i) ? 0.1 : 0.05;
-            nextEnergies[moveTarget] = Math.min(energy - burn - moveCost, 100);
+            nextEnergies[moveTarget] = Math.min(energy - burn - moveCost, sStats.maxHp);
             occupied[moveTarget] = 1;
         } 
         else if (moveTarget !== i && occupied[moveTarget] === 1 && nextSpecies[moveTarget] === SpeciesType.CORPSE) {

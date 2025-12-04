@@ -31,7 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
           Bio Sims
         </h1>
         <p className="text-slate-400 text-[10px] md:text-sm flex items-center gap-1 md:gap-2 truncate">
-          <Mountain size={14} className="hidden md:block"/> Procedural Continents & Seasons
+          <Mountain size={14} className="hidden md:block"/> Procedural Land, Species & Seasons
         </p>
       </div>
       
