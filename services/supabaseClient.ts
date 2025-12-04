@@ -1,27 +1,38 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Safely retrieve environment variables to prevent crashes if import.meta.env is undefined
-const getEnv = (key: string) => {
-  try {
-    // Check if import.meta.env exists
+// Robust retrieval of environment variables
+// 1. Try standard Vite import.meta.env
+// 2. Fallback to process.env (injected via vite.config.ts)
+
+let url = "";
+let key = "";
+
+try {
     // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-       // @ts-ignore
-       return import.meta.env[key];
-    }
-  } catch (e) {
-    // Silently fail if env is not accessible
-  }
-  return undefined;
-};
+    url = import.meta.env.VITE_SUPABASE_URL;
+    // @ts-ignore
+    key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+} catch (e) {
+    // import.meta access failed
+}
 
-// 1. Try to get keys from environment variables
-const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
-const SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY');
+// Fallback if import.meta didn't work or returned empty
+if (!url && typeof process !== 'undefined' && process.env) {
+    // @ts-ignore
+    url = process.env.VITE_SUPABASE_URL;
+    // @ts-ignore
+    key = process.env.VITE_SUPABASE_ANON_KEY;
+}
 
-export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) 
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+if (!url || !key) {
+    console.warn("Bio Sims: Supabase keys not found. Highscores will be in Offline/Local Mode.");
+} else {
+    console.log("Bio Sims: Connected to Global Highscore Database.");
+}
+
+export const supabase = (url && key) 
+  ? createClient(url, key) 
   : null;
 
 export interface HighScoreEntry {
