@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
-import { Mountain, Zap, Skull, RotateCcw, Printer, FileText, AlertTriangle, Clock, Activity, Eye, ArrowRight, ChevronRight, ChevronLeft, Leaf, Bug, Swords, Crown, Snowflake } from 'lucide-react';
-import { SPECIES_LIST, DEFAULT_GAME_CONFIG, SPECIES_LORE, SPECIES_CONFIG, SpeciesType } from '../types';
-import { SpeciesIcon } from './UIComponents';
+import React, { useState, useEffect } from 'react';
+import { Mountain, Zap, Skull, RotateCcw, FileText, AlertTriangle, Clock, Activity, ArrowRight, ChevronRight, ChevronLeft, Leaf, Bug, Swords, Crown, Snowflake, Trophy, Save } from 'lucide-react';
+import { SPECIES_CONFIG } from '../types';
 
 const ONBOARDING_STEPS = [
   {
@@ -60,14 +59,14 @@ const ONBOARDING_STEPS = [
   },
   {
     title: "The Eternal Balancer",
-    icon: <Zap size={48} className="text-white" />,
+    icon: <Zap size={48} className="text-teal-400" />,
     content: (
       <div className="space-y-4 text-center">
         <p className="text-slate-300">
           You are a watcher, but you have one intervention tool.
         </p>
         <div className="bg-slate-800 border border-slate-600 p-4 rounded-lg text-left">
-            <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Zap size={16}/>The Balancer</h4>
+            <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Zap size={16} className="text-teal-400"/>The Balancer</h4>
             <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
                 <li>Deployed <strong>once</strong> per simulation.</li>
                 <li><strong>Culls</strong> overpopulated species.</li>
@@ -164,66 +163,158 @@ export const LandingPage = ({ onStart }: { onStart: () => void }) => {
   );
 };
 
+// --- HIGHSCORE LOGIC ---
+interface HighScore {
+  name: string;
+  score: number; // totalTicks
+  year: number;
+  date: string;
+}
+
+const STORAGE_KEY = 'eco_sim_highscores';
+
+const getHighscores = (): HighScore[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const saveHighscore = (entry: HighScore) => {
+  try {
+    const current = getHighscores();
+    const updated = [...current, entry].sort((a, b) => b.score - a.score).slice(0, 5);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    return [];
+  }
+};
+
 export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, onReset, onContinue }: any) => {
-    const handlePrint = () => window.print();
+    const [playerName, setPlayerName] = useState('');
+    const [scores, setScores] = useState<HighScore[]>([]);
+    const [isHighScore, setIsHighScore] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+
+    useEffect(() => {
+        const currentScores = getHighscores();
+        setScores(currentScores);
+        // Check if current run qualifies (Top 5 or list has space)
+        if (!submitted) {
+            if (currentScores.length < 5 || totalTicks > currentScores[currentScores.length - 1].score) {
+                setIsHighScore(true);
+            }
+        }
+    }, [totalTicks, submitted]);
+
+    const handleSubmitScore = () => {
+        if (!playerName.trim()) return;
+        const entry: HighScore = {
+            name: playerName.trim().slice(0, 12),
+            score: totalTicks,
+            year: year,
+            date: new Date().toLocaleDateString()
+        };
+        const updated = saveHighscore(entry);
+        setScores(updated);
+        setSubmitted(true);
+        setIsHighScore(false);
+    };
 
     return (
-       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm print:hidden animate-in fade-in duration-300">
-        <div className="bg-slate-900 p-8 rounded-2xl border-2 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center text-center max-w-lg w-full m-4 animate-in zoom-in duration-300">
-          <Skull className="text-red-500 w-16 h-16 mb-4 animate-pulse" />
-          <h2 className="text-3xl font-black text-white mb-1 tracking-tight">SIMULATION TERMINATED</h2>
-          <div className="h-1 w-20 bg-red-500 rounded-full mb-6"></div>
+       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm print:hidden animate-in fade-in duration-300 p-4">
+        <div className="bg-slate-900 p-6 md:p-8 rounded-2xl border-2 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center text-center max-w-lg w-full m-4 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <Skull className="text-red-500 w-12 h-12 md:w-16 md:h-16 mb-2 animate-pulse" />
+          <h2 className="text-2xl md:text-3xl font-black text-white mb-1 tracking-tight">SIMULATION TERMINATED</h2>
+          <div className="h-1 w-20 bg-red-500 rounded-full mb-4 md:mb-6"></div>
           
-          <div className="bg-slate-950 p-6 rounded-xl w-full mb-6 text-left border border-slate-800 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
+          {/* STATS CARD */}
+          <div className="bg-slate-950 p-4 rounded-xl w-full mb-4 text-left border border-slate-800 relative overflow-hidden group shrink-0">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-teal-400"></div>
               
-              <div className="flex justify-between items-start mb-6 border-b border-slate-800 pb-4">
+              <div className="flex justify-between items-start mb-4 border-b border-slate-800 pb-2">
                   <div>
-                      <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                      <h3 className="text-sm md:text-lg font-bold text-slate-200 flex items-center gap-2">
                           <FileText size={18} className="text-blue-400"/> Final Report
                       </h3>
-                      <p className="text-xs text-slate-500 font-mono">LOG ID: {Math.floor(Math.random() * 100000).toString().padStart(6, '0')}</p>
                   </div>
-                  <div className="px-3 py-1 bg-red-900/30 border border-red-500/30 rounded text-red-400 text-xs font-bold uppercase">
+                  <div className="px-2 py-1 bg-red-900/30 border border-red-500/30 rounded text-red-400 text-[10px] md:text-xs font-bold uppercase">
                       Failure
                   </div>
               </div>
 
-              <div className="space-y-3 font-mono text-sm text-slate-300">
+              <div className="space-y-2 font-mono text-xs md:text-sm text-slate-300">
                   <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
                       <span className="text-slate-500 flex items-center gap-2"><AlertTriangle size={14}/> Cause</span>
-                      <span className="font-bold text-red-400">{cause}</span>
+                      <span className="font-bold text-red-400 truncate max-w-[150px] md:max-w-none text-right">{cause}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
                       <span className="text-slate-500 flex items-center gap-2"><Clock size={14}/> Duration</span>
                       <span>Year <span className="text-white">{year}</span>, Tick <span className="text-white">{tick}</span></span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                      <span className="text-slate-500 flex items-center gap-2"><Activity size={14}/> Total Ticks</span>
-                      <span className="text-white">{totalTicks}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                      <span className="text-slate-500 flex items-center gap-2"><Zap size={14}/> Balancer</span>
-                      <span className={alienDeployed ? "text-white" : "text-slate-600"}>{alienDeployed ? "DEPLOYED" : "UNUSED"}</span>
+                      <span className="text-slate-500 flex items-center gap-2"><Activity size={14}/> Total Score</span>
+                      <span className="text-white font-bold">{totalTicks}</span>
                   </div>
               </div>
+          </div>
 
-              <div className="mt-6 pt-3 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-600 uppercase tracking-widest">
-                          <span>Eco Sim Automated Observer</span>
-                          <span>{new Date().toLocaleDateString()}</span>
+          {/* HIGHSCORE BOARD */}
+          <div className="w-full bg-slate-800/50 rounded-xl border border-slate-700 p-4 mb-4 shrink-0">
+              <h3 className="text-sm font-bold text-teal-400 flex items-center justify-center gap-2 mb-3">
+                  <Trophy size={16} /> TOP 5 SURVIVORS
+              </h3>
+              
+              {isHighScore && !submitted ? (
+                  <div className="mb-4 bg-teal-900/20 border border-teal-500/30 p-3 rounded-lg animate-pulse">
+                      <p className="text-teal-200 text-xs font-bold mb-2">NEW RECORD! ENTER IDENTIFIER:</p>
+                      <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={playerName} 
+                            onChange={(e) => setPlayerName(e.target.value)}
+                            maxLength={12}
+                            placeholder="NAME"
+                            className="bg-slate-900 border border-slate-600 rounded px-3 py-1 text-white text-sm w-full focus:outline-none focus:border-teal-400 font-mono uppercase"
+                          />
+                          <button 
+                            onClick={handleSubmitScore}
+                            disabled={!playerName}
+                            className="bg-teal-500 hover:bg-teal-400 text-slate-900 p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              <Save size={18} />
+                          </button>
+                      </div>
+                  </div>
+              ) : null}
+
+              <div className="space-y-1">
+                  {scores.length === 0 && <p className="text-xs text-slate-500 italic py-2">No records found locally.</p>}
+                  {scores.map((s, i) => (
+                      <div key={i} className={`flex justify-between items-center p-2 rounded text-xs ${s.score === totalTicks && submitted && s.name === playerName ? 'bg-teal-500/20 border border-teal-500/50' : 'bg-slate-900/40'}`}>
+                          <div className="flex items-center gap-3">
+                              <span className={`font-mono font-bold w-4 ${i===0 ? 'text-yellow-400' : 'text-slate-500'}`}>#{i+1}</span>
+                              <span className="text-slate-200 font-bold font-mono uppercase">{s.name}</span>
+                          </div>
+                          <div className="flex gap-4 text-slate-400 font-mono">
+                              <span>Yr {s.year}</span>
+                              <span className="text-white font-bold">{s.score}</span>
+                          </div>
+                      </div>
+                  ))}
               </div>
           </div>
           
-          <div className="flex gap-3 w-full">
+          <div className="flex gap-3 w-full shrink-0">
             <button onClick={onReset} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg hover:shadow-red-500/20 text-sm">
               <RotateCcw size={18} /> REBOOT SYSTEM
             </button>
-            <button onClick={handlePrint} className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 border border-slate-700 hover:border-slate-600 rounded-xl font-bold flex justify-center items-center gap-2 transition-all text-sm">
-              <Printer size={18} /> EXPORT LOG
-            </button>
           </div>
           
-          <button onClick={onContinue} className="mt-4 text-xs text-slate-500 hover:text-slate-300 underline">
+          <button onClick={onContinue} className="mt-4 text-xs text-slate-500 hover:text-slate-300 underline shrink-0">
              Continue Observing (Ignore Warning)
           </button>
         </div>
