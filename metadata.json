@@ -1,5 +1,5 @@
 {
-  "name": "Eco Sim",
+  "name": "Bio Sims",
   "description": "A complex cellular automaton simulating a predator-prey ecosystem on a procedural terrain. Features 5 distinct species with unique behaviors.",
   "requestFramePermissions": []
 }

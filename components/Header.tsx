@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play, Pause, RotateCcw, Mountain, Gauge, Settings2 } from 'lucide-react';
 import { GameStats } from '../types';
@@ -16,14 +15,20 @@ interface HeaderProps {
   onSpeedChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onTogglePlay: () => void;
   onReset: () => void;
+  playBtnRef?: React.RefObject<HTMLButtonElement | null>;
+  settingsBtnRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
-export const Header: React.FC<HeaderProps> = ({ year, currentTick, stats, uiSpeed, runningState, isGameOver, showSettings, onToggleSettings, onSpeedChange, onTogglePlay, onReset }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+    year, currentTick, stats, uiSpeed, runningState, isGameOver, showSettings, 
+    onToggleSettings, onSpeedChange, onTogglePlay, onReset,
+    playBtnRef, settingsBtnRef 
+}) => {
   return (
     <header className="mb-2 md:mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-2 xl:gap-4">
       <div className="flex flex-row items-baseline gap-3 md:gap-4">
         <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-white whitespace-nowrap">
-          Sims Eco
+          Bio Sims
         </h1>
         <p className="text-slate-400 text-[10px] md:text-sm flex items-center gap-1 md:gap-2 truncate">
           <Mountain size={14} className="hidden md:block"/> Procedural Continents & Seasons
@@ -45,7 +50,13 @@ export const Header: React.FC<HeaderProps> = ({ year, currentTick, stats, uiSpee
             <input type="range" min="20" max="1000" step="10" value={uiSpeed} onChange={onSpeedChange} className="w-16 md:w-24 accent-blue-500" />
             </div>
 
-            <button onClick={onToggleSettings} className={`p-2 rounded transition-all ${showSettings ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Settings2 size={18} /></button>
+            <button 
+                ref={settingsBtnRef}
+                onClick={onToggleSettings} 
+                className={`p-2 rounded transition-all ${showSettings ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+            >
+                <Settings2 size={18} />
+            </button>
             <button onClick={onReset} className="p-2 rounded text-slate-400 hover:text-white transition-all"><RotateCcw size={18} /></button>
         </div>
         
@@ -57,6 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ year, currentTick, stats, uiSpee
 
         {/* Play Button - Far Right */}
         <button 
+            ref={playBtnRef}
             onClick={onTogglePlay} 
             disabled={isGameOver} 
             className={`p-2 md:p-2 rounded-lg transition-all flex items-center justify-center shadow-lg shrink-0 ml-1 ${

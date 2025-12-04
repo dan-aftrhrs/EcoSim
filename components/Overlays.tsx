@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mountain, Zap, Skull, RotateCcw, FileText, AlertTriangle, Clock, Activity, ArrowRight, ChevronRight, ChevronLeft, Leaf, Bug, Swords, Crown, Snowflake, Trophy, Save } from 'lucide-react';
 import { SPECIES_CONFIG } from '../types';
 
 const ONBOARDING_STEPS = [
   {
-    title: "Welcome to Sims Eco",
+    title: "Welcome to Bio Sims",
     icon: <Mountain size={48} className="text-blue-400" />,
     content: (
       <div className="text-center space-y-4">

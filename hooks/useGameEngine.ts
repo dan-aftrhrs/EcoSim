@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { SpeciesType, GameStats, SpawnSettings, Season, GameModifiers, GameConfig, DEFAULT_GAME_CONFIG, SPECIES_CONFIG } from '../types';
+import { SpeciesType, GameStats, SpawnSettings, Season, GameModifiers, GameConfig, DEFAULT_GAME_CONFIG, SPECIES_CONFIG, NewsItem, NewsType } from '../types';
 import { calculateStats } from '../utils/simulation';
 import { initializeWorldData, updateWorld } from '../utils/gameLogic';
 
@@ -25,6 +25,25 @@ const DEFAULT_MODIFIERS: GameModifiers = {
   rescueCount: 0,
 };
 
+const TRIVIA_LIST = [
+    "Tip: Plants grow faster near water.",
+    "Trivia: Apex predators can cross mountain ranges.",
+    "Tip: Winter freezes shallow water, creating bridges.",
+    "Trivia: Corpses decay into nutrients for plants.",
+    "Tip: High biodiversity prevents total extinction.",
+    "Trivia: The Balancer consumes cosmic energy.",
+    "Tip: Insects can cross water in Winter.",
+    "Trivia: Plants have a 50% regen rate from nearby corpses.",
+    "Tip: Herbivores thrive in grasslands.",
+    "Trivia: Predators hunt in packs to take down larger prey.",
+    "Tip: Autumn is the best season for Apex hunting.",
+    "Trivia: The Alien Balancer is immortal.",
+    "Tip: Watch the population density to avoid starvation.",
+    "Trivia: Life always finds a way... usually.",
+    "Tip: Use the Balancer to save endangered species.",
+    "Trivia: Swarmers are the first to scavenge carrion."
+];
+
 export const useGameEngine = () => {
   const [generation, setGeneration] = useState(0);
   const [stats, setStats] = useState<GameStats>({
@@ -36,7 +55,7 @@ export const useGameEngine = () => {
   const [extinctionEvent, setExtinctionEvent] = useState<number>(0);
   const [gameOver, setGameOver] = useState<{ isOver: boolean; cause: string }>({ isOver: false, cause: '' });
   const [alienDeployed, setAlienDeployed] = useState(false);
-  const [balancerLog, setBalancerLog] = useState<string[]>([]);
+  const [newsFeed, setNewsFeed] = useState<NewsItem[]>([]);
 
   const speedRef = useRef(150); 
   const lastTickRef = useRef(0);
@@ -44,6 +63,12 @@ export const useGameEngine = () => {
   const isRunning = useRef(false);
   const seasonTickRef = useRef(0);
   const generationRef = useRef(0);
+  
+  // Refs for tracking news events to prevent spamming
+  const lastOverpopLogRef = useRef<Record<SpeciesType, number>>({} as any);
+  const lastScarcityLogRef = useRef<Record<SpeciesType, number>>({} as any);
+  const startUpTimeRef = useRef<number>(0);
+  const lastLogSignatureRef = useRef<string>("");
   
   const modifiersRef = useRef<GameModifiers>({ ...DEFAULT_MODIFIERS });
   const spawnSettingsRef = useRef<SpawnSettings>({ ...DEFAULT_SPAWN_SETTINGS });
@@ -91,7 +116,16 @@ export const useGameEngine = () => {
     modifiersRef.current = { ...DEFAULT_MODIFIERS };
     ignoredExtinctionsRef.current.clear();
     setAlienDeployed(false);
-    setBalancerLog([]);
+    
+    // Initial Start Message
+    setNewsFeed([{
+        id: 'start-' + Date.now(),
+        text: "The simulation has started.",
+        type: 'info'
+    }]);
+    startUpTimeRef.current = Date.now();
+    lastLogSignatureRef.current = "The simulation has started.";
+
     generationRef.current = 0;
     setGeneration(0);
     setGameOver({ isOver: false, cause: '' }); 
@@ -101,6 +135,10 @@ export const useGameEngine = () => {
        season: Season.SPRING,
        modifiers: modifiersRef.current
     });
+    
+    // Reset log trackers
+    lastOverpopLogRef.current = {} as any;
+    lastScarcityLogRef.current = {} as any;
   }, []);
 
   const update = useCallback(() => {
@@ -110,6 +148,60 @@ export const useGameEngine = () => {
     const ticksPerYear = ticksPerSeason * 4; 
     const currentSeason = Math.floor((seasonTickRef.current % ticksPerYear) / ticksPerSeason) as Season;
     seasonTickRef.current += 1;
+
+    // --- News Feed Logic ---
+    const rawEvents: NewsItem[] = [];
+    const isCoolingDown = (Date.now() - startUpTimeRef.current) < 2000;
+    
+    // Allow news only after cooldown AND after 30 ticks (days)
+    if (!isCoolingDown && generationRef.current > 30) {
+        const LIVING_SPECIES = [SpeciesType.PLANT, SpeciesType.INSECT, SpeciesType.HERBIVORE, SpeciesType.PREDATOR, SpeciesType.APEX];
+        
+        // 1. Check Population Status
+        LIVING_SPECIES.forEach(s => {
+            const count = currentPopStats[s];
+            if (totalPop > 0) {
+                const pct = count / totalPop;
+                const cooldown = 200; // ticks before repeating message
+                
+                // Check Scarcity (Critically Low but not 0)
+                if (pct < 0.05 && count > 0 && count < 30) {
+                     const lastTick = lastScarcityLogRef.current[s] || -9999;
+                     if (generationRef.current - lastTick > cooldown) {
+                         rawEvents.push({
+                            id: `scarcity-${s}-${generationRef.current}`,
+                            text: `${SPECIES_CONFIG[s].name} are near extinction!`,
+                            type: 'extinction' // Red
+                         });
+                         lastScarcityLogRef.current[s] = generationRef.current;
+                     }
+                }
+                
+                // Check Overpopulation (Dominance)
+                if (pct > 0.45) {
+                     const lastTick = lastOverpopLogRef.current[s] || -9999;
+                     if (generationRef.current - lastTick > cooldown) {
+                         rawEvents.push({
+                             id: `boom-${s}-${generationRef.current}`,
+                             text: `${SPECIES_CONFIG[s].name} population is booming!`,
+                             type: 'overpop' // Orange
+                         });
+                         lastOverpopLogRef.current[s] = generationRef.current;
+                     }
+                }
+            }
+        });
+
+        // 2. Trivia Injection
+        if (Math.random() < 0.005) { // Roughly once every 200 ticks
+            const tip = TRIVIA_LIST[Math.floor(Math.random() * TRIVIA_LIST.length)];
+            rawEvents.push({
+                id: `trivia-${generationRef.current}`,
+                text: tip,
+                type: 'tip' // Blue
+            });
+        }
+    }
 
     const { events } = updateWorld(WIDTH, HEIGHT, {
         species: speciesRef.current,
@@ -131,8 +223,38 @@ export const useGameEngine = () => {
         currentPopStats
     });
 
-    if (events.length > 0) {
-        setBalancerLog(prev => [...events, ...prev].slice(0, 10));
+    // 3. Process Engine Events (Balancer Actions)
+    if (!isCoolingDown) {
+        events.forEach(evtText => {
+            let type: NewsType = 'info';
+            if (evtText.includes("culled")) type = 'cull';     // Purple
+            else if (evtText.includes("restored")) type = 'restore'; // Green
+            
+            rawEvents.push({
+                id: `evt-${generationRef.current}-${Math.random()}`,
+                text: evtText,
+                type: type
+            });
+        });
+    }
+
+    if (rawEvents.length > 0) {
+        setNewsFeed(prev => {
+            // Deduplicate against the most recent item
+            const lastItem = prev[0];
+            const filteredNew = rawEvents.filter(e => {
+                if (lastItem && e.text === lastItem.text) return false;
+                if (e.text === lastLogSignatureRef.current) return false;
+                return true;
+            });
+            
+            if (filteredNew.length === 0) return prev;
+
+            // Update signature to last item
+            lastLogSignatureRef.current = filteredNew[filteredNew.length - 1].text;
+            
+            return [...filteredNew.reverse(), ...prev].slice(0, 15);
+        });
     }
 
     const tempS = speciesRef.current; speciesRef.current = nextSpeciesRef.current; nextSpeciesRef.current = tempS;
@@ -178,5 +300,5 @@ export const useGameEngine = () => {
 
   useEffect(() => { initializeWorld(); return () => stop(); }, [initializeWorld, stop]);
 
-  return { width: WIDTH, height: HEIGHT, speciesRef, terrainRef, ageRef, energyRef, generation, stats, start, stop, reset, continueSimulation, spawnAlien, alienDeployed, isRunning, setSpeed, updateSpawnSettings, updateGameConfig, currentSettings: spawnSettingsRef.current, currentConfig: gameConfigRef.current, extinctionEvent, gameOver, balancerLog };
+  return { width: WIDTH, height: HEIGHT, speciesRef, terrainRef, ageRef, energyRef, generation, stats, start, stop, reset, continueSimulation, spawnAlien, alienDeployed, isRunning, setSpeed, updateSpawnSettings, updateGameConfig, currentSettings: spawnSettingsRef.current, currentConfig: gameConfigRef.current, extinctionEvent, gameOver, newsFeed };
 };

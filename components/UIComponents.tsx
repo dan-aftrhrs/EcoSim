@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Leaf, Bug, Rat, Swords, Crown, Zap, CloudRain, Sun, CloudSun, Snowflake, ScrollText, Heart } from 'lucide-react';
 import { SpeciesType, Season, SPECIES_CONFIG, SPECIES_LORE, GameStats, SpeciesAttributes, SPECIES_LIST } from '../types';
@@ -43,11 +42,13 @@ interface StatCardProps {
   alienDeployed: boolean;
   deployMode: boolean;
   toggleDeployMode: () => void;
+  alienRef?: React.RefObject<HTMLDivElement | null>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight, alienDeployed, deployMode, toggleDeployMode }) => {
+export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight, alienDeployed, deployMode, toggleDeployMode, alienRef, containerRef }) => {
   return (
-    <div className="w-full">
+    <div className="w-full" ref={containerRef}>
         {/* Grid layout: 3 columns on mobile, 6 on desktop. No scrolling needed. */}
         <div className="grid grid-cols-3 gap-1 md:gap-4 md:grid-cols-6">
         {SPECIES_LIST.map((t: SpeciesType) => {
@@ -57,7 +58,8 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
             if (t === SpeciesType.ALIEN) {
                 return (
                     <div 
-                        key={t} 
+                        key={t}
+                        ref={alienRef}
                         className={`p-1 md:p-2 rounded-lg border flex flex-col items-center justify-center relative overflow-hidden group transition-all cursor-pointer h-14 md:h-auto
                             ${deployMode ? 'bg-teal-900/30 border-teal-400 animate-pulse' : 'bg-slate-800 border-slate-700 hover:border-teal-400/50'}
                         `}
@@ -91,6 +93,7 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
                 className="bg-slate-800 p-1 md:p-2 rounded-lg border border-slate-700 flex flex-col items-center relative overflow-hidden group hover:border-slate-500 transition-colors cursor-pointer h-14 md:h-auto"
                 onMouseEnter={() => setHighlight(t)}
                 onMouseLeave={() => setHighlight(null)}
+                onClick={() => setHighlight(t)}
             >
                 {count < 10 && <div className="absolute inset-0 bg-red-500/10 animate-pulse pointer-events-none"></div>}
                 <div className="flex items-center gap-1 mb-0.5 md:mb-1 font-bold text-[9px] md:text-sm text-slate-300 w-full justify-center">

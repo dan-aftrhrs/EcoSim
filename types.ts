@@ -57,6 +57,14 @@ export interface GameStats {
 
 export type SpawnSettings = Record<SpeciesType, number>;
 
+export type NewsType = 'info' | 'extinction' | 'overpop' | 'cull' | 'restore' | 'tip';
+
+export interface NewsItem {
+    id: string;
+    text: string;
+    type: NewsType;
+}
+
 export const SPECIES_CONFIG = {
   [SpeciesType.PLANT]: { color: '#4ade80', name: 'Flora', shape: 'square' },
   [SpeciesType.INSECT]: { color: '#facc15', name: 'Swarmers', shape: 'circle' },
