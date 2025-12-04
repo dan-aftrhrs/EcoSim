@@ -64,7 +64,7 @@ export const SPECIES_CONFIG = {
   [SpeciesType.PREDATOR]: { color: '#f87171', name: 'Hunters', shape: 'triangle' },
   [SpeciesType.APEX]: { color: '#c084fc', name: 'Apexes', shape: 'star' },
   [SpeciesType.CORPSE]: { color: '#4b5563', name: 'Carrion', shape: 'x' },
-  [SpeciesType.ALIEN]: { color: '#22d3ee', name: 'Balancer', shape: 'star' },
+  [SpeciesType.ALIEN]: { color: '#ffffff', name: 'Balancer', shape: 'star' },
   [SpeciesType.NONE]: { color: 'transparent', name: '', shape: '' },
 };
 

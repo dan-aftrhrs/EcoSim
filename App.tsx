@@ -61,7 +61,7 @@ function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 h-full">
           <div className="flex flex-col gap-4 min-w-0">
-            <div className={`relative overflow-hidden rounded-lg shadow-2xl bg-black border border-slate-700 touch-none mx-auto ${deployMode ? 'cursor-crosshair ring-2 ring-purple-500' : ''}`} style={{ maxWidth: '100%' }} onClick={handleCanvasClick}>
+            <div className={`relative overflow-hidden rounded-lg shadow-2xl bg-black border border-slate-700 touch-none mx-auto ${deployMode ? 'cursor-crosshair ring-2 ring-white' : ''}`} style={{ maxWidth: '100%' }} onClick={handleCanvasClick}>
                  <div className="w-full flex justify-center bg-slate-950">
                     <GameCanvas width={width} height={height} speciesRef={speciesRef} terrainRef={terrainRef} ageRef={ageRef} energyRef={energyRef} generation={generation} season={stats.season} highlightSpecies={highlightSpecies} />
                  </div>

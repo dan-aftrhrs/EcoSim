@@ -132,7 +132,7 @@ export const useGameEngine = () => {
     });
 
     if (events.length > 0) {
-        setBalancerLog(prev => [...events, ...prev].slice(0, 5));
+        setBalancerLog(prev => [...events, ...prev].slice(0, 10));
     }
 
     const tempS = speciesRef.current; speciesRef.current = nextSpeciesRef.current; nextSpeciesRef.current = tempS;

@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ year, currentTick, stats, uiSpee
         {/* Controls Group */}
         <div className="flex items-center gap-2 shrink-0">
             <div className="flex items-center gap-2 px-2 border-r border-slate-700 mr-1">
-            <Gauge size={16} className="text-slate-400 hidden sm:block"/>
+            <Gauge size={16} className="text-slate-400 block"/>
             <input type="range" min="20" max="1000" step="10" value={uiSpeed} onChange={onSpeedChange} className="w-16 md:w-24 accent-blue-500" />
             </div>
 

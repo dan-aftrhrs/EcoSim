@@ -60,7 +60,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, setHighligh
             {/* BALANCER ACTIVITY SECTION */}
             <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg flex flex-col overflow-hidden w-1/2 lg:w-full lg:flex-none lg:h-auto lg:max-h-[40%]">
                 <div className="p-2 lg:p-3 border-b border-slate-700 bg-slate-800/50 flex-shrink-0">
-                    <h3 className="text-xs md:text-sm font-bold flex items-center gap-2 text-purple-400 truncate">
+                    <h3 className="text-xs md:text-sm font-bold flex items-center gap-2 text-white truncate">
                         <Zap size={14} /> Balancer Activity
                     </h3>
                 </div>
@@ -69,7 +69,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, setHighligh
                         <div className="space-y-1 font-mono text-[9px] md:text-xs">
                            {logs.map((log, i) => (
                               <div key={i} className="text-slate-300 border-b border-slate-800/50 pb-1 mb-1 last:mb-0 last:border-0 last:pb-0 break-words leading-tight">
-                                  <span className="text-purple-500 mr-1">&gt;</span>{log}
+                                  <span className="text-white mr-1">&gt;</span>{log}
                               </div>
                            ))}
                         </div>

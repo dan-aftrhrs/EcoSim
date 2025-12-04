@@ -59,7 +59,7 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
                     <div 
                         key={t} 
                         className={`p-1 md:p-2 rounded-lg border flex flex-col items-center justify-center relative overflow-hidden group transition-all cursor-pointer h-14 md:h-auto
-                            ${deployMode ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-800 border-slate-700 hover:border-purple-500/50'}
+                            ${deployMode ? 'bg-white/10 border-white animate-pulse' : 'bg-slate-800 border-slate-700 hover:border-white/50'}
                         `}
                         onClick={() => !alienDeployed && toggleDeployMode()}
                         onMouseEnter={() => setHighlight(t)}
@@ -71,15 +71,15 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
                         </div>
                         
                         {alienDeployed ? (
-                            <div className="text-[10px] md:text-xl font-mono text-purple-400 font-bold">ACTIVE</div>
+                            <div className="text-[10px] md:text-xl font-mono text-white font-bold">ACTIVE</div>
                         ) : (
-                            <div className={`text-[9px] md:text-xs font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap ${deployMode ? 'bg-purple-500 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                            <div className={`text-[9px] md:text-xs font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap ${deployMode ? 'bg-white text-black' : 'bg-slate-700 text-slate-400'}`}>
                                 {deployMode ? 'PLACE' : 'DEPLOY'}
                             </div>
                         )}
                         
                         <div className="absolute bottom-0 left-0 w-full h-0.5 md:h-1 bg-slate-900">
-                             {alienDeployed && <div className="h-full bg-purple-500 w-full"></div>}
+                             {alienDeployed && <div className="h-full bg-white w-full"></div>}
                         </div>
                     </div>
                 );

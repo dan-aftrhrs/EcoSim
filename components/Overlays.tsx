@@ -60,14 +60,14 @@ const ONBOARDING_STEPS = [
   },
   {
     title: "The Eternal Balancer",
-    icon: <Zap size={48} className="text-purple-400" />,
+    icon: <Zap size={48} className="text-white" />,
     content: (
       <div className="space-y-4 text-center">
         <p className="text-slate-300">
           You are a watcher, but you have one intervention tool.
         </p>
-        <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-lg text-left">
-            <h4 className="font-bold text-purple-300 mb-2 flex items-center gap-2"><Zap size={16}/>The Balancer</h4>
+        <div className="bg-slate-800 border border-slate-600 p-4 rounded-lg text-left">
+            <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Zap size={16}/>The Balancer</h4>
             <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
                 <li>Deployed <strong>once</strong> per simulation.</li>
                 <li><strong>Culls</strong> overpopulated species.</li>
@@ -204,7 +204,7 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
                   </div>
                   <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
                       <span className="text-slate-500 flex items-center gap-2"><Zap size={14}/> Balancer</span>
-                      <span className={alienDeployed ? "text-purple-400" : "text-slate-600"}>{alienDeployed ? "DEPLOYED" : "UNUSED"}</span>
+                      <span className={alienDeployed ? "text-white" : "text-slate-600"}>{alienDeployed ? "DEPLOYED" : "UNUSED"}</span>
                   </div>
               </div>
 
