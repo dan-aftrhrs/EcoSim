@@ -1,28 +1,35 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Robust retrieval of environment variables
-// 1. Try standard Vite import.meta.env
-// 2. Fallback to process.env (injected via vite.config.ts)
+// --- CONFIGURATION ---
 
 let url = "";
 let key = "";
 
+// 1. Try standard Vite import.meta.env (Works in most dev/prod setups)
 try {
     // @ts-ignore
-    url = import.meta.env.VITE_SUPABASE_URL;
-    // @ts-ignore
-    key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-} catch (e) {
-    // import.meta access failed
-}
+    if (import.meta && import.meta.env) {
+        // @ts-ignore
+        url = import.meta.env.VITE_SUPABASE_URL;
+        // @ts-ignore
+        key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    }
+} catch (e) { /* ignore */ }
 
-// Fallback if import.meta didn't work or returned empty
-if (!url && typeof process !== 'undefined' && process.env) {
-    // @ts-ignore
-    url = process.env.VITE_SUPABASE_URL;
-    // @ts-ignore
-    key = process.env.VITE_SUPABASE_ANON_KEY;
+// 2. Fallback to process.env replacement (Works with the vite.config.ts define we added)
+// We access these directly so the bundler can replace the token string
+if (!url) {
+    try {
+        // @ts-ignore
+        const pUrl = process.env.VITE_SUPABASE_URL;
+        // @ts-ignore
+        const pKey = process.env.VITE_SUPABASE_ANON_KEY;
+        if (pUrl && pKey) {
+            url = pUrl;
+            key = pKey;
+        }
+    } catch (e) { /* ignore */ }
 }
 
 if (!url || !key) {
@@ -64,11 +71,11 @@ export const fetchGlobalScores = async (): Promise<HighScoreEntry[]> => {
   }
 };
 
-export const submitGlobalScore = async (entry: HighScoreEntry) => {
-  if (!supabase) return null;
+// Returns object with success flag and optional error message
+export const submitGlobalScore = async (entry: HighScoreEntry): Promise<{ success: boolean; error?: string }> => {
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
 
   try {
-      // Must chain .select() to return the inserted data
       const { data, error } = await supabase
         .from('highscores')
         .insert([
@@ -81,12 +88,12 @@ export const submitGlobalScore = async (entry: HighScoreEntry) => {
         .select(); 
 
       if (error) {
-        console.error('Supabase Error:', error.message, error.details || '', error.hint || '');
-        return null;
+        console.error('Supabase Error:', error.message);
+        return { success: false, error: error.message };
       }
-      return data;
-  } catch (e) {
+      return { success: true };
+  } catch (e: any) {
       console.error("Network error submitting score:", e);
-      return null;
+      return { success: false, error: e.message || "Unknown network error" };
   }
 };

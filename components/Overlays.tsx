@@ -241,8 +241,8 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
 
         if (isGlobal) {
             const result = await submitGlobalScore(entry);
-            if (!result) {
-                alert("Error submitting score. Please check your network connection or API keys.");
+            if (!result.success) {
+                alert(`Error submitting score:\n${result.error}\n\nPlease check your Database Table and RLS Policies.`);
                 setLoading(false);
                 return;
             }
