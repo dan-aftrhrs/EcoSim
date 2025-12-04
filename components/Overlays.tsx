@@ -187,6 +187,7 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
     const [isHighScore, setIsHighScore] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const isGlobal = !!supabase; // Check if Supabase is connected
 
@@ -232,6 +233,7 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
     const handleSubmitScore = async () => {
         if (!playerName.trim()) return;
         setLoading(true);
+        setErrorMsg(null);
 
         const entry: HighScoreEntry = {
             name: playerName.trim().slice(0, 12),
@@ -242,7 +244,8 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
         if (isGlobal) {
             const result = await submitGlobalScore(entry);
             if (!result.success) {
-                alert(`Error submitting score:\n${result.error}\n\nPlease check your Database Table and RLS Policies.`);
+                // Show inline error instead of alert
+                setErrorMsg(result.error || "Unknown error");
                 setLoading(false);
                 return;
             }
@@ -338,6 +341,11 @@ export const GameOverModal = ({ cause, year, tick, totalTicks, alienDeployed, on
                               {loading ? <Activity size={18} className="animate-spin" /> : <Save size={18} />}
                           </button>
                       </div>
+                      {errorMsg && (
+                          <div className="mt-2 text-[10px] text-red-300 bg-red-900/40 p-1 rounded border border-red-500/30">
+                              {errorMsg.includes("policy") ? "Error: Database blocked the update (RLS Policy)." : errorMsg}
+                          </div>
+                      )}
                   </div>
               ) : null}
 

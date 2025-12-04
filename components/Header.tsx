@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, Pause, RotateCcw, Mountain, Gauge, Settings2 } from 'lucide-react';
 import { GameStats } from '../types';
@@ -47,7 +48,31 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 shrink-0">
             <div className="flex items-center gap-2 px-2 border-r border-slate-700 mr-1">
             <Gauge size={16} className="text-slate-400 block"/>
-            <input type="range" min="20" max="1000" step="10" value={uiSpeed} onChange={onSpeedChange} className="w-16 md:w-24 accent-blue-500" />
+            {/* 
+                Speed Slider Logic:
+                uiSpeed is the delay in ms (20ms = fast, 1000ms = slow).
+                We want the slider to visualize SPEED (Right = Fast, Left = Slow).
+                So we invert the mapping:
+                Slider Value = 1020 - uiSpeed.
+                If uiSpeed is 20 (Fast), Slider is 1000 (Right).
+                If uiSpeed is 1000 (Slow), Slider is 20 (Left).
+            */}
+            <input 
+                type="range" 
+                min="20" 
+                max="1000" 
+                step="10" 
+                value={1020 - uiSpeed} 
+                onChange={(e) => {
+                    // Convert Slider Value (Speed) back to Delay (ms)
+                    const sliderVal = Number(e.target.value);
+                    const newDelay = 1020 - sliderVal;
+                    // Pass the calculated delay back to the App
+                    e.target.value = String(newDelay);
+                    onSpeedChange(e);
+                }} 
+                className="w-16 md:w-24 accent-blue-500" 
+            />
             </div>
 
             <button 
