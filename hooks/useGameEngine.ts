@@ -260,8 +260,8 @@ export const useGameEngine = () => {
             // Update signature
             lastLogSignatureRef.current = candidates[candidates.length - 1].text;
             
-            // Limit to latest 6 items
-            return [...candidates.reverse(), ...prev].slice(0, 6);
+            // Limit to latest 10 items
+            return [...candidates.reverse(), ...prev].slice(0, 10);
         });
     }
 
