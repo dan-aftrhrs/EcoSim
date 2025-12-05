@@ -6,15 +6,15 @@ import { supabase, fetchGlobalScores, submitGlobalScore, HighScoreEntry } from '
 
 const ONBOARDING_STEPS = [
   {
-    title: "Welcome to Bio Sims",
+    title: "Welcome Watcher.",
     icon: <Mountain size={48} className="text-blue-400" />,
     content: (
       <div className="text-center space-y-4">
         <p className="text-lg text-slate-300">
-          You are about to enter a living, breathing ecosystem on your palm.
+          You are about to observe a living, breathing ecosystem.
         </p>
         <p className="text-sm text-slate-400">
-          Watch as life struggles to survive across distinct continents, seasonal cycles, and a dynamic food chain.
+          Watch as life unfolds across distinct continents, seasons, and a dynamic food chain.
         </p>
       </div>
     )
@@ -87,7 +87,7 @@ const ONBOARDING_STEPS = [
         <p className="text-slate-400">
           If any species dies out completely, the simulation ends. 
           <br/>
-          Use the Gardener wisely.
+          Use the Balancer wisely.
         </p>
         <p className="text-xs text-slate-500 font-mono">Good Luck, Watcher.</p>
       </div>
