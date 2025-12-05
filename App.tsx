@@ -185,17 +185,17 @@ function App() {
           <InfoPanel currentConfig={currentConfig} onSpeciesAction={handleSpeciesAction} newsFeed={newsFeed} />
         </div>
 
-        {/* Full Width Play Button */}
-        <div className="w-full mt-4">
+        {/* Full Width Play Button - Sticky on Mobile */}
+        <div className="w-full mt-4 sticky bottom-4 z-30 md:static">
             <button
                 ref={playButtonRef}
                 onClick={togglePlay}
                 disabled={gameOver.isOver}
                 className={`
-                w-full h-14 md:h-16 rounded-xl flex items-center justify-center gap-3 shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99]
+                w-full h-14 md:h-16 rounded-xl flex items-center justify-center gap-3 shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] backdrop-blur-sm
                 ${runningState 
-                    ? 'bg-slate-800 border border-red-500/50 text-red-400 hover:bg-slate-700 ring-1 ring-red-500/20' 
-                    : 'bg-green-600 hover:bg-green-500 text-white border border-green-400/50 shadow-green-500/20'}
+                    ? 'bg-slate-800/95 border border-red-500/50 text-red-400 hover:bg-slate-700 ring-1 ring-red-500/20' 
+                    : 'bg-green-600/95 hover:bg-green-500 text-white border border-green-400/50 shadow-green-500/20'}
                 ${gameOver.isOver ? 'opacity-50 grayscale cursor-not-allowed' : ''}
                 `}
             >

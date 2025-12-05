@@ -146,16 +146,18 @@ export const updateWorld = (
     const isEndangered: Record<number, boolean> = {};
     const isDominant: Record<number, boolean> = {};
     
+    // Track the absolute most endangered species to "bee-line" towards
+    let lowestEndangeredSpecies: SpeciesType | null = null;
+    let lowestEndangeredCount = Number.MAX_VALUE;
+
     if (totalPop > 0) {
         const globalDensity = totalPop / (width * height);
         
         // Dynamic Thresholds based on Global Density
-        // If crowded (>15%), be strict about dominance (20%). If empty (<5%), be generous (40%).
         let dominantThreshold = 0.30;
         if (globalDensity > 0.15) dominantThreshold = 0.20;
         else if (globalDensity < 0.05) dominantThreshold = 0.40;
 
-        // If crowded, barely help anyone (<5%). If empty, help everyone (<15%).
         let endangeredThreshold = 0.10;
         if (globalDensity > 0.15) endangeredThreshold = 0.05;
         else if (globalDensity < 0.05) endangeredThreshold = 0.15;
@@ -163,9 +165,17 @@ export const updateWorld = (
         for (const sKey in currentPopStats) {
              const sType = Number(sKey) as SpeciesType;
              if (sType === SpeciesType.NONE || sType === SpeciesType.ALIEN || sType === SpeciesType.CORPSE) continue;
-             const percent = currentPopStats[sType] / totalPop;
+             const count = currentPopStats[sType];
+             const percent = count / totalPop;
              
-             if (percent < endangeredThreshold) isEndangered[sType] = true;
+             if (percent < endangeredThreshold) {
+                 isEndangered[sType] = true;
+                 // Identify the most critical priority
+                 if (count > 0 && count < lowestEndangeredCount) {
+                     lowestEndangeredCount = count;
+                     lowestEndangeredSpecies = sType;
+                 }
+             }
              if (percent > dominantThreshold) isDominant[sType] = true;
         }
     }
@@ -326,37 +336,72 @@ export const updateWorld = (
             // The Gardener can walk anywhere (Water, Mountains) and walk over (trample) any existing species
             // to reach its destination.
             let moveTarget = i;
-            const candidates = [];
+            let bestScore = -1;
             
+            // "Bee-line" behavior: FULL SCAN for nearest endangered entity
+            let targetVectorX = 0;
+            let targetVectorY = 0;
+            let hasGlobalTarget = false;
+            
+            if (lowestEndangeredSpecies !== null) {
+                let minDistSq = Number.MAX_VALUE;
+                const myX = i % width;
+                const myY = Math.floor(i / width);
+                
+                // Deterministic Scan ensures we find the absolute closest one
+                for (let scan = 0; scan < totalCells; scan++) {
+                    if (species[scan] === lowestEndangeredSpecies) {
+                        const tx = scan % width;
+                        const ty = Math.floor(scan / width);
+                        const dSq = (tx-myX)**2 + (ty-myY)**2;
+                        if (dSq < minDistSq) {
+                            minDistSq = dSq;
+                            targetVectorX = tx - myX;
+                            targetVectorY = ty - myY;
+                            hasGlobalTarget = true;
+                        }
+                    }
+                }
+            }
+
+            const curX = i % width;
+            const curY = Math.floor(i / width);
+
             for(let k=0; k<nArr.length; k++) {
                 const idx = nArr[k];
-                
                 // Only check if the spot hasn't already been claimed by another mover this tick to avoid collision
-                // We ignore terrain type (can walk on deep water)
-                // We ignore current species (can trample)
                 if (occupied[idx] === 0) {
                     let score = Math.random();
+                    const nx = idx % width;
+                    const ny = Math.floor(idx / width);
                     
+                    // Local Priorities
                     const secondaryNeighbors = neighborMap[idx];
                     for (let m=0; m<secondaryNeighbors.length; m++) {
                         const sIdx = secondaryNeighbors[m];
                         const sType = species[sIdx];
                         
                         if (sType !== SpeciesType.NONE && sType !== SpeciesType.ALIEN) {
-                            if (isEndangered[sType]) score += 20; // High priority to reach endangered
+                            if (isEndangered[sType]) score += 20; 
                             else if (sType === SpeciesType.CORPSE) score += 5; 
                             else if (isDominant[sType]) score += 5; 
                         }
                     }
-                    
-                    candidates.push({ idx, score });
-                }
-            }
 
-            if (candidates.length > 0) {
-                candidates.sort((a, b) => b.score - a.score);
-                const limit = Math.min(2, candidates.length);
-                moveTarget = candidates[Math.floor(Math.random() * limit)].idx;
+                    // Global "Bee-line" priority
+                    if (hasGlobalTarget) {
+                        const dx = nx - curX;
+                        const dy = ny - curY;
+                        // Dot product to check if this move aligns with target vector
+                        const dot = dx * targetVectorX + dy * targetVectorY;
+                        if (dot > 0) score += 15; // Strong bias towards target
+                    }
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        moveTarget = idx;
+                    }
+                }
             }
             
             nextSpecies[moveTarget] = SpeciesType.ALIEN; nextEnergies[moveTarget] = 100; occupied[moveTarget] = 1;
@@ -368,11 +413,20 @@ export const updateWorld = (
         const sStats = config.species[s];
         const maxAgeInTicks = sStats.maxAge * ticksPerYear;
 
+        // --- HIBERNATION LOGIC ---
+        // Insects and Apexes hibernate in Winter if energy is low or just generally to save energy
         if (season === Season.WINTER && (s === SpeciesType.INSECT || s === SpeciesType.APEX)) {
             const needsSleep = energy < 60;
+            // 85% chance to sleep, 100% if energy is low
             if (Math.random() < (needsSleep ? 1.0 : 0.85)) {
-                if (occupied[i] === 0) { nextSpecies[i] = s; nextAges[i] = age + 1; nextEnergies[i] = Math.max(0, energy - 0.01); occupied[i] = 1; }
-                continue;
+                if (occupied[i] === 0) { 
+                    nextSpecies[i] = s; 
+                    nextAges[i] = age + 1; 
+                    // Burn very little energy while sleeping
+                    nextEnergies[i] = Math.max(0, energy - 0.01); 
+                    occupied[i] = 1; 
+                }
+                continue; // Skip movement/eating/repro
             }
         }
 
@@ -508,6 +562,8 @@ export const updateWorld = (
                  const nextT = terrain[idx];
                  let isTraversable = (nextT === TerrainType.GRASS || nextT === TerrainType.FOREST || nextT === TerrainType.ICE);
                  if (s === SpeciesType.APEX && nextT === TerrainType.MOUNTAIN) isTraversable = true;
+                 
+                 // SWARMER LOGIC: Strict check for Shallow Water Only
                  if (s === SpeciesType.INSECT && nextT === TerrainType.SHALLOW_WATER) isTraversable = true;
                  
                  if (isTraversable && occupied[idx] === 0) {
@@ -593,7 +649,7 @@ export const updateWorld = (
                      const isTraversable = (s === SpeciesType.APEX) 
                         ? (nextT >= TerrainType.GRASS) 
                         : (nextT >= TerrainType.GRASS && nextT !== TerrainType.MOUNTAIN);
-                     const canBirth = occupied[idx] === 0 && (isTraversable || (s===SpeciesType.INSECT && nextT === TerrainType.SHALLOW_WATER));
+                     const canBirth = occupied[idx] === 0 && (isTraversable || (s===SpeciesType.INSECT && (nextT === TerrainType.SHALLOW_WATER)));
                      if(canBirth) freeSpots.push(idx);
                  }
                  if (freeSpots.length > 0) {

@@ -87,7 +87,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     [SpeciesType.INSECT]: { maxAge: 4.0, reproCost: 12, reproThreshold: 30, spawnChance: 0.50, mateReq: 0, maxHp: 100 },
     [SpeciesType.HERBIVORE]: { maxAge: 3.0, reproCost: 18, reproThreshold: 30, spawnChance: 0.35, mateReq: 1, maxHp: 100 },
     [SpeciesType.PREDATOR]: { maxAge: 8.0, reproCost: 20, reproThreshold: 40, spawnChance: 0.70, mateReq: 1, maxHp: 100 },
-    [SpeciesType.APEX]: { maxAge: 20.0, reproCost: 20, reproThreshold: 40, spawnChance: 0.60, mateReq: 1, maxHp: 100 },
+    [SpeciesType.APEX]: { maxAge: 20.0, reproCost: 30, reproThreshold: 40, spawnChance: 0.60, mateReq: 1, maxHp: 100 },
     [SpeciesType.ALIEN]: { maxAge: 9999, reproCost: 0, reproThreshold: 0, spawnChance: 0, mateReq: 0, maxHp: 100 },
   }
 };
@@ -110,7 +110,7 @@ export const SPECIES_LORE: Record<SpeciesType, { diet: string, predators: string
   [SpeciesType.INSECT]: {
     diet: "Carrion (1st), Plants (2nd)",
     predators: "Grazers, Hunters",
-    special: "Scavengers. Crosses water in Winter."
+    special: "Scavengers. Crosses shallow water. Hibernates in Winter."
   },
   [SpeciesType.HERBIVORE]: {
     diet: "Plants, Swarmers",
@@ -125,7 +125,7 @@ export const SPECIES_LORE: Record<SpeciesType, { diet: string, predators: string
   [SpeciesType.APEX]: {
     diet: "Everything (Autumn), Hunters, Grazers",
     predators: "Swarm of Hunters",
-    special: "Solitary. Crosses Mountains. Cannibalistic in Autumn."
+    special: "Crosses Mountains. Hibernates in Winter. Cannibalistic in Autumn."
   },
   [SpeciesType.ALIEN]: {
     diet: "Cosmic Energy",

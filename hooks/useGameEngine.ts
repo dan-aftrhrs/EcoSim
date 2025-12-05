@@ -31,17 +31,18 @@ const TRIVIA_LIST = [
     "Tip: Winter freezes shallow water, creating bridges.",
     "Trivia: Corpses decay into nutrients for plants.",
     "Tip: High biodiversity prevents total extinction.",
-    "Trivia: The Balancer consumes cosmic energy.",
-    "Tip: Insects can cross water in Winter.",
+    "Trivia: It's unclear what The Balancer consumes.",
+    "Tip: Insects can cross water all year round.",
     "Trivia: Plants have a 50% regen rate from nearby corpses.",
     "Tip: Herbivores thrive in grasslands.",
     "Trivia: Predators hunt in packs to take down larger prey.",
-    "Tip: Autumn is the best season for Apex hunting.",
+    "Tip: Stay away from Apex in Autumn.",
     "Trivia: The Alien Balancer is immortal.",
     "Tip: Watch the population density to avoid starvation.",
     "Trivia: Life always finds a way... usually.",
     "Tip: Use the Balancer to save endangered species.",
-    "Trivia: Swarmers are the first to scavenge carrion."
+    "Trivia: Swarmers are the first to scavenge carrion.",
+    "Tip: Wait until the very last minute before deploying The Balancer"
 ];
 
 export const useGameEngine = () => {
@@ -260,7 +261,7 @@ export const useGameEngine = () => {
             lastLogSignatureRef.current = candidates[candidates.length - 1].text;
             
             // Limit to latest 6 items
-            return [...candidates.reverse(), ...prev].slice(0, 5);
+            return [...candidates.reverse(), ...prev].slice(0, 6);
         });
     }
 
