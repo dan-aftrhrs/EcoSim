@@ -36,11 +36,14 @@ export const getSeasonName = (season: Season) => {
 };
 
 // --- STAT CARD ---
+export type SpeciesAction = 'hover' | 'leave' | 'click';
+
 interface StatCardProps {
   stats: GameStats;
   maxPop: number;
-  setHighlight: (t: SpeciesType | null) => void;
+  onSpeciesAction: (t: SpeciesType | null, action: SpeciesAction) => void;
   currentHighlight: SpeciesType | null;
+  lockedHighlight?: SpeciesType | null;
   alienDeployed: boolean;
   deployMode: boolean;
   toggleDeployMode: () => void;
@@ -48,7 +51,10 @@ interface StatCardProps {
   containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight, currentHighlight, alienDeployed, deployMode, toggleDeployMode, alienRef, containerRef }) => {
+export const StatCard: React.FC<StatCardProps> = ({ 
+    stats, maxPop, onSpeciesAction, currentHighlight, lockedHighlight, 
+    alienDeployed, deployMode, toggleDeployMode, alienRef, containerRef 
+}) => {
   return (
     <div className="w-full" ref={containerRef}>
         {/* Grid layout: 3 columns on mobile, 6 on desktop. No scrolling needed. */}
@@ -57,6 +63,7 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
             const count = stats.population[t];
             const percent = maxPop > 0 ? (count / maxPop) * 100 : 0;
             const isHighlighted = currentHighlight === t;
+            const isLocked = lockedHighlight === t;
             
             if (t === SpeciesType.ALIEN) {
                 return (
@@ -71,15 +78,15 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
                             if (!alienDeployed) {
                                 toggleDeployMode();
                             } else {
-                                // Toggle Highlight if deployed
-                                setHighlight(isHighlighted ? null : t);
+                                onSpeciesAction(t, 'click');
                             }
                         }}
                         onMouseEnter={() => {
-                            // Only allow highlight if already deployed
-                            if (alienDeployed) setHighlight(t);
+                            if (alienDeployed) onSpeciesAction(t, 'hover');
                         }}
-                        // Note: We removed onMouseLeave so the highlight "sticks" until toggled or canvas clicked
+                        onMouseLeave={() => {
+                            if (alienDeployed) onSpeciesAction(t, 'leave');
+                        }}
                     >
                         <div className="flex items-center gap-1 mb-0.5 md:mb-1 font-bold text-[9px] md:text-sm text-slate-300">
                             <SpeciesIcon type={t} />
@@ -105,10 +112,12 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
             <div 
                 key={t} 
                 className={`bg-slate-800 p-1 md:p-2 rounded-lg border flex flex-col items-center relative overflow-hidden group transition-colors cursor-pointer h-14 md:h-auto
-                    ${isHighlighted ? 'border-blue-400 ring-1 ring-blue-400 bg-slate-700' : 'border-slate-700 hover:border-slate-500'}
+                    ${isHighlighted ? 'border-blue-400 bg-slate-700' : 'border-slate-700 hover:border-slate-500'}
+                    ${isLocked ? 'ring-2 ring-blue-400' : ''}
                 `}
-                onMouseEnter={() => setHighlight(t)}
-                onClick={() => setHighlight(isHighlighted ? null : t)} // Toggle logic
+                onMouseEnter={() => onSpeciesAction(t, 'hover')}
+                onMouseLeave={() => onSpeciesAction(t, 'leave')}
+                onClick={() => onSpeciesAction(t, 'click')}
             >
                 {count < 10 && <div className="absolute inset-0 bg-red-500/10 animate-pulse pointer-events-none"></div>}
                 <div className="flex items-center gap-1 mb-0.5 md:mb-1 font-bold text-[9px] md:text-sm text-slate-300 w-full justify-center">
@@ -150,7 +159,11 @@ export const SpeciesDetails: React.FC<{ type: SpeciesType, config: SpeciesAttrib
 };
 
 // --- SPECIES PROFILE (Desktop Accordion) ---
-export const SpeciesProfile: React.FC<{ type: SpeciesType, config: SpeciesAttributes, setHighlight: (t: SpeciesType | null) => void }> = ({ type, config, setHighlight }) => {
+export const SpeciesProfile: React.FC<{ 
+    type: SpeciesType, 
+    config: SpeciesAttributes, 
+    onSpeciesAction: (t: SpeciesType | null, action: SpeciesAction) => void 
+}> = ({ type, config, onSpeciesAction }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -162,8 +175,8 @@ export const SpeciesProfile: React.FC<{ type: SpeciesType, config: SpeciesAttrib
     >
       <div 
         className="w-full flex items-center justify-between p-3 text-left cursor-pointer"
-        onMouseEnter={() => setHighlight(type)}
-        onMouseLeave={() => setHighlight(null)}
+        onMouseEnter={() => onSpeciesAction(type, 'hover')}
+        onMouseLeave={() => onSpeciesAction(type, 'leave')}
       >
         <div className="flex items-center gap-2 font-bold text-slate-200 text-sm">
           <SpeciesIcon type={type} /> 

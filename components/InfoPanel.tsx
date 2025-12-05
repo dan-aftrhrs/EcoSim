@@ -2,15 +2,15 @@
 import React, { useState } from 'react';
 import { Info, Radio } from 'lucide-react';
 import { SPECIES_LIST, GameConfig, SpeciesType, SPECIES_CONFIG, NewsItem, NewsType } from '../types';
-import { SpeciesProfile, SpeciesIcon, SpeciesDetails } from './UIComponents';
+import { SpeciesProfile, SpeciesIcon, SpeciesDetails, SpeciesAction } from './UIComponents';
 
 interface InfoPanelProps {
     currentConfig: GameConfig;
-    setHighlightSpecies: (t: SpeciesType | null) => void;
+    onSpeciesAction: (t: SpeciesType | null, action: SpeciesAction) => void;
     newsFeed?: NewsItem[];
 }
 
-export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, setHighlightSpecies, newsFeed }) => {
+export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, onSpeciesAction, newsFeed }) => {
     const [selectedMobileSpecies, setSelectedMobileSpecies] = useState<SpeciesType>(SpeciesType.PLANT);
     const logs = newsFeed || [];
 
@@ -27,47 +27,6 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, setHighligh
 
     return (
         <div className="flex flex-row lg:flex-col gap-2 lg:gap-4 h-64 lg:h-full w-full print:hidden">
-            {/* SPECIES INTEL SECTION */}
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg flex flex-col overflow-hidden w-1/2 lg:w-full flex-1">
-                 <div className="p-2 lg:p-3 border-b border-slate-700 bg-slate-800/50 flex-shrink-0">
-                    <h3 className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-100">
-                        <Info size={14} className="text-blue-400" /> <span className="hidden md:inline">Species</span> Intel
-                    </h3>
-                 </div>
-                 
-                 {/* MOBILE VIEW: Selectable Icons + Detail View */}
-                 <div className="flex flex-col h-full lg:hidden overflow-hidden">
-                    {/* Icon Selection Strip */}
-                    <div className="flex overflow-x-auto p-1 bg-slate-900/50 border-b border-slate-700 gap-1 no-scrollbar shrink-0">
-                        {SPECIES_LIST.map(type => (
-                            <button
-                                key={type}
-                                onClick={() => { setSelectedMobileSpecies(type); setHighlightSpecies(type); }}
-                                className={`p-1.5 rounded flex items-center justify-center transition-colors ${selectedMobileSpecies === type ? 'bg-slate-700 ring-1 ring-blue-500' : 'hover:bg-slate-800'}`}
-                            >
-                                <SpeciesIcon type={type} />
-                            </button>
-                        ))}
-                    </div>
-                    {/* Detail View for Selected */}
-                    <div className="p-2 overflow-y-auto custom-scrollbar flex-1 bg-slate-900/20">
-                         <div className="flex items-center gap-2 mb-1">
-                             <span className="text-[10px] font-bold" style={{ color: SPECIES_CONFIG[selectedMobileSpecies].color }}>
-                                 {SPECIES_CONFIG[selectedMobileSpecies].name}
-                             </span>
-                         </div>
-                         <SpeciesDetails type={selectedMobileSpecies} config={currentConfig.species[selectedMobileSpecies]} />
-                    </div>
-                 </div>
-
-                 {/* DESKTOP VIEW: Vertical Accordion List */}
-                 <div className="hidden lg:block overflow-y-auto custom-scrollbar p-2 space-y-2 flex-1">
-                     {SPECIES_LIST.map(type => (
-                       <SpeciesProfile key={type} type={type} config={currentConfig.species[type]} setHighlight={setHighlightSpecies} />
-                     ))}
-                 </div>
-            </div>
-
             {/* NEWS FEED SECTION */}
             <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg flex flex-col overflow-hidden w-1/2 lg:w-full lg:flex-none lg:h-auto lg:max-h-[40%]">
                 <div className="p-2 lg:p-3 border-b border-slate-700 bg-slate-800/50 flex-shrink-0">
@@ -92,6 +51,50 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ currentConfig, setHighligh
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* SPECIES INTEL SECTION */}
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg flex flex-col overflow-hidden w-1/2 lg:w-full flex-1">
+                 <div className="p-2 lg:p-3 border-b border-slate-700 bg-slate-800/50 flex-shrink-0">
+                    <h3 className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-100">
+                        <Info size={14} className="text-blue-400" /> <span className="hidden md:inline">Species</span> Intel
+                    </h3>
+                 </div>
+                 
+                 {/* MOBILE VIEW: Selectable Icons + Detail View */}
+                 <div className="flex flex-col h-full lg:hidden overflow-hidden">
+                    {/* Icon Selection Strip */}
+                    <div className="flex overflow-x-auto p-1 bg-slate-900/50 border-b border-slate-700 gap-1 no-scrollbar shrink-0">
+                        {SPECIES_LIST.map(type => (
+                            <button
+                                key={type}
+                                onClick={() => { 
+                                    setSelectedMobileSpecies(type); 
+                                    onSpeciesAction(type, 'click'); 
+                                }}
+                                className={`p-1.5 rounded flex items-center justify-center transition-colors ${selectedMobileSpecies === type ? 'bg-slate-700 ring-1 ring-blue-500' : 'hover:bg-slate-800'}`}
+                            >
+                                <SpeciesIcon type={type} />
+                            </button>
+                        ))}
+                    </div>
+                    {/* Detail View for Selected */}
+                    <div className="p-2 overflow-y-auto custom-scrollbar flex-1 bg-slate-900/20">
+                         <div className="flex items-center gap-2 mb-1">
+                             <span className="text-[10px] font-bold" style={{ color: SPECIES_CONFIG[selectedMobileSpecies].color }}>
+                                 {SPECIES_CONFIG[selectedMobileSpecies].name}
+                             </span>
+                         </div>
+                         <SpeciesDetails type={selectedMobileSpecies} config={currentConfig.species[selectedMobileSpecies]} />
+                    </div>
+                 </div>
+
+                 {/* DESKTOP VIEW: Vertical Accordion List */}
+                 <div className="hidden lg:block overflow-y-auto custom-scrollbar p-2 space-y-2 flex-1">
+                     {SPECIES_LIST.map(type => (
+                       <SpeciesProfile key={type} type={type} config={currentConfig.species[type]} onSpeciesAction={onSpeciesAction} />
+                     ))}
+                 </div>
             </div>
         </div>
     )

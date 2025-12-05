@@ -240,20 +240,27 @@ export const useGameEngine = () => {
 
     if (rawEvents.length > 0) {
         setNewsFeed(prev => {
-            // Deduplicate against the most recent item
-            const lastItem = prev[0];
-            const filteredNew = rawEvents.filter(e => {
-                if (lastItem && e.text === lastItem.text) return false;
-                if (e.text === lastLogSignatureRef.current) return false;
-                return true;
-            });
+            // Deduplicate logic:
+            // 1. Check against the head of the previous list
+            // 2. Check within the new batch to ensure no sequential duplicates
             
-            if (filteredNew.length === 0) return prev;
+            const candidates: NewsItem[] = [];
+            let lastText = prev.length > 0 ? prev[0].text : "";
 
-            // Update signature to last item
-            lastLogSignatureRef.current = filteredNew[filteredNew.length - 1].text;
+            for (const event of rawEvents) {
+                if (event.text !== lastText) {
+                    candidates.push(event);
+                    lastText = event.text;
+                }
+            }
+
+            if (candidates.length === 0) return prev;
+
+            // Update signature
+            lastLogSignatureRef.current = candidates[candidates.length - 1].text;
             
-            return [...filteredNew.reverse(), ...prev].slice(0, 15);
+            // Limit to latest 6 items
+            return [...candidates.reverse(), ...prev].slice(0, 5);
         });
     }
 

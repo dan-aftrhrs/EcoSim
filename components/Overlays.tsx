@@ -59,7 +59,7 @@ const ONBOARDING_STEPS = [
     )
   },
   {
-    title: "The Cosmic Gardener",
+    title: "The Eternal Balancer",
     icon: <Zap size={48} className="text-teal-400" />,
     content: (
       <div className="space-y-4 text-center">

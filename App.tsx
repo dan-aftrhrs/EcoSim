@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { useGameEngine } from './hooks/useGameEngine';
-import { StatCard } from './components/UIComponents';
+import { StatCard, SpeciesAction } from './components/UIComponents';
 import { LandingPage, GameOverModal } from './components/Overlays';
 import { Header } from './components/Header';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -18,7 +18,11 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [deployMode, setDeployMode] = useState(false);
+  
+  // Highlight State
   const [highlightSpecies, setHighlightSpecies] = useState<SpeciesType | null>(null);
+  const [lockedSpecies, setLockedSpecies] = useState<SpeciesType | null>(null);
+
   const [spawnConfig, setSpawnConfig] = useState<SpawnSettings>(currentSettings);
   const [gameConfig, setGameConfig] = useState<GameConfig>(currentConfig);
   const prevExtinctionRef = useRef(0);
@@ -61,9 +65,30 @@ function App() {
        const gridY = Math.floor((e.clientY - rect.top) * scaleY);
        if (gridX >= 0 && gridX < width && gridY >= 0 && gridY < height) { spawnAlien(gridX, gridY); setDeployMode(false); }
     } else {
-        // Clear highlight on canvas click if not in deploy mode
-        if (highlightSpecies !== null) setHighlightSpecies(null);
+        // Clear locked highlight on canvas click (unless in deploy mode)
+        if (lockedSpecies !== null) {
+            setLockedSpecies(null);
+            setHighlightSpecies(null);
+        }
     }
+  };
+
+  const handleSpeciesAction = (type: SpeciesType | null, action: SpeciesAction) => {
+      if (action === 'hover' && type !== null) {
+          if (!lockedSpecies) setHighlightSpecies(type);
+      }
+      else if (action === 'leave') {
+          if (!lockedSpecies) setHighlightSpecies(null);
+      }
+      else if (action === 'click' && type !== null) {
+          if (lockedSpecies === type) {
+              setLockedSpecies(null);
+              // Do not clear highlight immediately as mouse is still likely hovering
+          } else {
+              setLockedSpecies(type);
+              setHighlightSpecies(type);
+          }
+      }
   };
 
   const togglePlay = () => { 
@@ -91,9 +116,10 @@ function App() {
           position: 'top'
       },
       {
+          targetRef: alienCardRef as React.RefObject<HTMLElement>,
           text: "The Balancer acts as a Cosmic Gardener. It walks over water and herds, weeding out overpopulation and planting seeds for endangered species.",
           customContent: <BalancerGraphic />,
-          position: 'center'
+          position: 'top'
       },
       {
           targetRef: statsRef as React.RefObject<HTMLElement>,
@@ -101,9 +127,10 @@ function App() {
           position: 'top'
       },
       {
+          targetRef: statsRef as React.RefObject<HTMLElement>,
           text: "Life starts with this default biomass distribution. Plants are abundant, while Apex predators are rare.",
           customContent: <DistributionGraphic />,
-          position: 'center'
+          position: 'top'
       },
       {
           targetRef: settingsButtonRef as React.RefObject<HTMLElement>,
@@ -145,8 +172,9 @@ function App() {
             <StatCard 
                 stats={stats} 
                 maxPop={maxPop} 
-                setHighlight={setHighlightSpecies} 
+                onSpeciesAction={handleSpeciesAction}
                 currentHighlight={highlightSpecies}
+                lockedHighlight={lockedSpecies}
                 alienDeployed={alienDeployed} 
                 deployMode={deployMode} 
                 toggleDeployMode={() => setDeployMode(!deployMode)} 
@@ -154,7 +182,7 @@ function App() {
                 containerRef={statsRef}
             />
           </div>
-          <InfoPanel currentConfig={currentConfig} setHighlightSpecies={setHighlightSpecies} newsFeed={newsFeed} />
+          <InfoPanel currentConfig={currentConfig} onSpeciesAction={handleSpeciesAction} newsFeed={newsFeed} />
         </div>
 
         {/* Full Width Play Button */}

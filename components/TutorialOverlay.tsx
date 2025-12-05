@@ -208,7 +208,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
             </div>
 
             <div className="flex justify-between items-center gap-4">
-                <button onClick={onSkip} className="text-xs text-slate-500 hover:text-slate-300">
+                <button onClick={onSkip} className="text-xs text-red-500 hover:text-red-400 transition-colors">
                     Skip Tutorial
                 </button>
                 <button 
