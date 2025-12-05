@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Play, Pause, RotateCcw, Mountain, Gauge, Settings2 } from 'lucide-react';
+import { RotateCcw, Mountain, Gauge, Settings2 } from 'lucide-react';
 import { GameStats } from '../types';
 import { SeasonIcon, getSeasonName } from './UIComponents';
 
@@ -9,22 +9,29 @@ interface HeaderProps {
   currentTick: number;
   stats: GameStats;
   uiSpeed: number;
-  runningState: boolean;
-  isGameOver: boolean;
   showSettings: boolean;
   onToggleSettings: () => void;
-  onSpeedChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onTogglePlay: () => void;
+  onSpeedChange: (speed: number) => void;
   onReset: () => void;
-  playBtnRef?: React.RefObject<HTMLButtonElement | null>;
   settingsBtnRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
-    year, currentTick, stats, uiSpeed, runningState, isGameOver, showSettings, 
-    onToggleSettings, onSpeedChange, onTogglePlay, onReset,
-    playBtnRef, settingsBtnRef 
+    year, currentTick, stats, uiSpeed, showSettings, 
+    onToggleSettings, onSpeedChange, onReset,
+    settingsBtnRef 
 }) => {
+  
+  // Helper to determine slider position (1, 2, 3) from delay (ms)
+  // Fast (20ms) -> 3
+  // Normal (150ms) -> 2
+  // Slow (500ms) -> 1
+  const getSliderValue = (ms: number) => {
+      if (ms <= 50) return 3;
+      if (ms >= 400) return 1;
+      return 2;
+  };
+
   return (
     <header className="mb-2 md:mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-2 xl:gap-4">
       <div className="flex flex-row items-baseline gap-3 md:gap-4">
@@ -46,32 +53,27 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Controls Group */}
         <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-2 px-2 border-r border-slate-700 mr-1">
-            <Gauge size={16} className="text-slate-400 block"/>
-            {/* 
-                Speed Slider Logic:
-                uiSpeed is the delay in ms (20ms = fast, 1000ms = slow).
-                We want the slider to visualize SPEED (Right = Fast, Left = Slow).
-                So we invert the mapping:
-                Slider Value = 1020 - uiSpeed.
-                If uiSpeed is 20 (Fast), Slider is 1000 (Right).
-                If uiSpeed is 1000 (Slow), Slider is 20 (Left).
-            */}
+            <div className="flex items-center gap-2 px-2 border-r border-slate-700 mr-1 group">
+            <Gauge size={16} className={`transition-colors ${uiSpeed <= 50 ? 'text-teal-400 animate-pulse' : 'text-slate-400'}`}/>
+            
+            {/* 3-Step Speed Slider: Slow (1) | Normal (2) | Fast (3) */}
             <input 
                 type="range" 
-                min="20" 
-                max="1000" 
-                step="10" 
-                value={1020 - uiSpeed} 
+                min="1" 
+                max="3" 
+                step="1" 
+                value={getSliderValue(uiSpeed)}
                 onChange={(e) => {
-                    // Convert Slider Value (Speed) back to Delay (ms)
-                    const sliderVal = Number(e.target.value);
-                    const newDelay = 1020 - sliderVal;
-                    // Pass the calculated delay back to the App
-                    e.target.value = String(newDelay);
-                    onSpeedChange(e);
+                    const step = Number(e.target.value);
+                    let newDelay = 150; // Default (Normal)
+                    
+                    if (step === 1) newDelay = 500; // Slow
+                    if (step === 3) newDelay = 20;  // Super Fast
+
+                    onSpeedChange(newDelay);
                 }} 
-                className="w-16 md:w-24 accent-blue-500" 
+                className="w-24 md:w-20 accent-blue-500 cursor-pointer touch-none"
+                title="Speed: Slow | Normal | Fast"
             />
             </div>
 
@@ -86,24 +88,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         
         {/* Year / Day Display - Visible on Mobile now */}
-        <div className="ml-1 md:ml-2 text-[10px] md:text-xs text-slate-400 font-mono pl-2 border-l border-slate-700 shrink-0 flex flex-col md:flex-row md:items-center md:gap-3 leading-tight justify-center">
+        <div className="ml-1 md:ml-2 text-[10px] md:text-xs text-slate-400 font-mono pl-2 shrink-0 flex flex-col md:flex-row md:items-center md:gap-3 leading-tight justify-center border-l border-slate-700">
           <span className="whitespace-nowrap">Yr <span className="text-slate-200 font-bold">{year}</span></span>
           <span className="whitespace-nowrap">Day <span className="text-slate-200 font-bold">{currentTick}</span></span>
         </div>
-
-        {/* Play Button - Far Right */}
-        <button 
-            ref={playBtnRef}
-            onClick={onTogglePlay} 
-            disabled={isGameOver} 
-            className={`p-2 md:p-2 rounded-lg transition-all flex items-center justify-center shadow-lg shrink-0 ml-1 ${
-                runningState 
-                ? 'bg-red-500 text-white border-red-600' 
-                : 'bg-green-500 text-white border-green-600 animate-pulse'
-            } ${isGameOver ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {runningState ? <Pause fill="currentColor" size={20} /> : <Play fill="currentColor" size={20} />}
-        </button>
       </div>
     </header>
   );

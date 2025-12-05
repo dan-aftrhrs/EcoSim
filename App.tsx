@@ -9,6 +9,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { InfoPanel } from './components/InfoPanel';
 import { SpeciesType, SpawnSettings, GameConfig, SPECIES_LIST } from './types';
 import { TutorialOverlay, TutorialStep, DistributionGraphic, BalancerGraphic } from './components/TutorialOverlay';
+import { Play, Pause } from 'lucide-react';
 
 function App() {
   const { width, height, speciesRef, terrainRef, ageRef, energyRef, generation, start, stop, reset, continueSimulation, spawnAlien, alienDeployed, isRunning, stats, setSpeed, updateSpawnSettings, updateGameConfig, currentSettings, currentConfig, extinctionEvent, gameOver, newsFeed } = useGameEngine();
@@ -65,6 +66,12 @@ function App() {
     }
   };
 
+  const togglePlay = () => { 
+      if(isRunning.current) stop(); 
+      else start(); 
+      setRunningState(isRunning.current); 
+  };
+
   const maxPop = React.useMemo(() => Math.max(100, ...(Object.values(stats.population) as number[])), [stats]);
   const ticksPerYear = currentConfig.seasonDuration * 4;
   const year = Math.floor(generation / ticksPerYear) + 1;
@@ -76,7 +83,7 @@ function App() {
       {
           targetRef: playButtonRef as React.RefObject<HTMLElement>,
           text: "When you are ready, press the Green Play Button to begin the simulation life cycle.",
-          position: 'bottom'
+          position: 'top'
       },
       {
           targetRef: alienCardRef as React.RefObject<HTMLElement>,
@@ -84,7 +91,7 @@ function App() {
           position: 'top'
       },
       {
-          text: "The Balancer is a powerful entity. It culls overpopulated species and restores endangered ones. Use it wisely when extinction is imminent!",
+          text: "The Balancer acts as a Cosmic Gardener. It walks over water and herds, weeding out overpopulation and planting seeds for endangered species.",
           customContent: <BalancerGraphic />,
           position: 'center'
       },
@@ -113,20 +120,16 @@ function App() {
       
       {showTutorial && <TutorialOverlay steps={tutorialSteps} onComplete={finishTutorial} onSkip={finishTutorial} />}
 
-      <div className="max-w-[1400px] mx-auto print:hidden p-2 md:p-4 pb-40 w-full">
+      <div className="max-w-[1400px] mx-auto print:hidden p-2 md:p-4 pb-8 w-full">
         <Header 
             year={year} 
             currentTick={currentTick} 
             stats={stats} 
             uiSpeed={uiSpeed} 
-            runningState={runningState} 
-            isGameOver={gameOver.isOver} 
             showSettings={showSettings} 
             onToggleSettings={() => setShowSettings(!showSettings)} 
-            onSpeedChange={(e) => { setUiSpeed(Number(e.target.value)); setSpeed(Number(e.target.value)); }} 
-            onTogglePlay={() => { if(isRunning.current) stop(); else start(); setRunningState(isRunning.current); }} 
+            onSpeedChange={(newSpeed) => { setUiSpeed(newSpeed); setSpeed(newSpeed); }} 
             onReset={() => { reset(); prevExtinctionRef.current=0; setDeployMode(false); }}
-            playBtnRef={playButtonRef}
             settingsBtnRef={settingsButtonRef}
         />
 
@@ -143,6 +146,7 @@ function App() {
                 stats={stats} 
                 maxPop={maxPop} 
                 setHighlight={setHighlightSpecies} 
+                currentHighlight={highlightSpecies}
                 alienDeployed={alienDeployed} 
                 deployMode={deployMode} 
                 toggleDeployMode={() => setDeployMode(!deployMode)} 
@@ -151,6 +155,34 @@ function App() {
             />
           </div>
           <InfoPanel currentConfig={currentConfig} setHighlightSpecies={setHighlightSpecies} newsFeed={newsFeed} />
+        </div>
+
+        {/* Full Width Play Button */}
+        <div className="w-full mt-4">
+            <button
+                ref={playButtonRef}
+                onClick={togglePlay}
+                disabled={gameOver.isOver}
+                className={`
+                w-full h-14 md:h-16 rounded-xl flex items-center justify-center gap-3 shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99]
+                ${runningState 
+                    ? 'bg-slate-800 border border-red-500/50 text-red-400 hover:bg-slate-700 ring-1 ring-red-500/20' 
+                    : 'bg-green-600 hover:bg-green-500 text-white border border-green-400/50 shadow-green-500/20'}
+                ${gameOver.isOver ? 'opacity-50 grayscale cursor-not-allowed' : ''}
+                `}
+            >
+                {runningState ? (
+                    <>
+                        <Pause fill="currentColor" size={24} />
+                        <span className="font-black text-sm md:text-lg tracking-wider">PAUSE SIMULATION</span>
+                    </>
+                ) : (
+                    <>
+                        <Play fill="currentColor" size={24} />
+                        <span className="font-black text-sm md:text-lg tracking-wider">START SIMULATION</span>
+                    </>
+                )}
+            </button>
         </div>
       </div>
     </div>

@@ -130,7 +130,7 @@ export const SPECIES_LORE: Record<SpeciesType, { diet: string, predators: string
   [SpeciesType.ALIEN]: {
     diet: "Cosmic Energy",
     predators: "None",
-    special: "Balancer: Culls overpop, saves endangered."
+    special: "The Gardener: Walks on water, culls weeds, saves flowers."
   },
   [SpeciesType.CORPSE]: { diet: "None", predators: "Swarmers", special: "Decays over time." },
   [SpeciesType.NONE]: { diet: "", predators: "", special: "" }

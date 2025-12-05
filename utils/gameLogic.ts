@@ -322,21 +322,19 @@ export const updateWorld = (
                 }
             }
 
-            // 2. INTELLIGENT MOVEMENT
+            // 2. INTELLIGENT MOVEMENT (GARDENER MODE)
+            // The Gardener can walk anywhere (Water, Mountains) and walk over (trample) any existing species
+            // to reach its destination.
             let moveTarget = i;
             const candidates = [];
             
             for(let k=0; k<nArr.length; k++) {
                 const idx = nArr[k];
-                // Check if we can step here.
-                // 1. Terrain must not be deep water.
-                // 2. Current species is NONE or PLANT.
-                // 3. Next slot is empty OR occupied by a PLANT (which we can trample).
-                const isTraversableTerrain = terrain[idx] !== TerrainType.DEEP_WATER;
-                const isPlantOrEmpty = species[idx] === SpeciesType.NONE || species[idx] === SpeciesType.PLANT;
-                const isNextFreeOrPlant = occupied[idx] === 0 || nextSpecies[idx] === SpeciesType.PLANT;
-
-                if (isTraversableTerrain && isPlantOrEmpty && isNextFreeOrPlant) {
+                
+                // Only check if the spot hasn't already been claimed by another mover this tick to avoid collision
+                // We ignore terrain type (can walk on deep water)
+                // We ignore current species (can trample)
+                if (occupied[idx] === 0) {
                     let score = Math.random();
                     
                     const secondaryNeighbors = neighborMap[idx];
@@ -345,7 +343,7 @@ export const updateWorld = (
                         const sType = species[sIdx];
                         
                         if (sType !== SpeciesType.NONE && sType !== SpeciesType.ALIEN) {
-                            if (isEndangered[sType]) score += 20; 
+                            if (isEndangered[sType]) score += 20; // High priority to reach endangered
                             else if (sType === SpeciesType.CORPSE) score += 5; 
                             else if (isDominant[sType]) score += 5; 
                         }

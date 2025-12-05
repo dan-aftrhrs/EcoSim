@@ -34,22 +34,44 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
   useEffect(() => {
     const updateRect = () => {
       if (step.targetRef && step.targetRef.current) {
-        setTargetRect(step.targetRef.current.getBoundingClientRect());
+        const rect = step.targetRef.current.getBoundingClientRect();
+        // Only update if coords actually changed to avoid render loop
+        setTargetRect(prev => {
+            if (!prev || prev.top !== rect.top || prev.left !== rect.left || prev.width !== rect.width || prev.height !== rect.height) {
+                return rect;
+            }
+            return prev;
+        });
       } else {
         setTargetRect(null); // Center mode or custom graphic
       }
     };
 
+    // Auto-scroll to target
+    if (step.targetRef && step.targetRef.current) {
+        step.targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     updateRect();
     window.addEventListener('resize', updateRect);
     window.addEventListener('scroll', updateRect);
     
+    // Active Observer for layout shifts
+    let observer: ResizeObserver | null = null;
+    if (step.targetRef && step.targetRef.current) {
+        observer = new ResizeObserver(updateRect);
+        observer.observe(step.targetRef.current);
+        observer.observe(document.body);
+    }
+    
     // Slight delay to allow UI to settle if it just rendered
-    setTimeout(updateRect, 100);
+    const t = setTimeout(updateRect, 100);
 
     return () => {
       window.removeEventListener('resize', updateRect);
       window.removeEventListener('scroll', updateRect);
+      clearTimeout(t);
+      if (observer) observer.disconnect();
     };
   }, [currentStepIndex, step]);
 
@@ -76,7 +98,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
       borderRadius: '8px',
       zIndex: 50,
       pointerEvents: 'none',
-      transition: 'all 0.4s ease-out'
+      transition: 'all 0.2s ease-out'
     };
   } else {
     // Full screen darken if no target
@@ -169,7 +191,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
 
       {/* The Content Card */}
       <div 
-        className="transition-all duration-500"
+        className="transition-all duration-300"
         style={cardStyle}
       >
          <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-2xl w-full text-center relative overflow-hidden">

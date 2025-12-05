@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Leaf, Bug, Rat, Swords, Crown, Zap, CloudRain, Sun, CloudSun, Snowflake, ScrollText, Heart } from 'lucide-react';
 import { SpeciesType, Season, SPECIES_CONFIG, SPECIES_LORE, GameStats, SpeciesAttributes, SPECIES_LIST } from '../types';
@@ -39,6 +40,7 @@ interface StatCardProps {
   stats: GameStats;
   maxPop: number;
   setHighlight: (t: SpeciesType | null) => void;
+  currentHighlight: SpeciesType | null;
   alienDeployed: boolean;
   deployMode: boolean;
   toggleDeployMode: () => void;
@@ -46,7 +48,7 @@ interface StatCardProps {
   containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight, alienDeployed, deployMode, toggleDeployMode, alienRef, containerRef }) => {
+export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight, currentHighlight, alienDeployed, deployMode, toggleDeployMode, alienRef, containerRef }) => {
   return (
     <div className="w-full" ref={containerRef}>
         {/* Grid layout: 3 columns on mobile, 6 on desktop. No scrolling needed. */}
@@ -54,6 +56,7 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
         {SPECIES_LIST.map((t: SpeciesType) => {
             const count = stats.population[t];
             const percent = maxPop > 0 ? (count / maxPop) * 100 : 0;
+            const isHighlighted = currentHighlight === t;
             
             if (t === SpeciesType.ALIEN) {
                 return (
@@ -62,10 +65,21 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
                         ref={alienRef}
                         className={`p-1 md:p-2 rounded-lg border flex flex-col items-center justify-center relative overflow-hidden group transition-all cursor-pointer h-14 md:h-auto
                             ${deployMode ? 'bg-teal-900/30 border-teal-400 animate-pulse' : 'bg-slate-800 border-slate-700 hover:border-teal-400/50'}
+                            ${isHighlighted ? 'ring-2 ring-teal-400 bg-slate-700' : ''}
                         `}
-                        onClick={() => !alienDeployed && toggleDeployMode()}
-                        onMouseEnter={() => setHighlight(t)}
-                        onMouseLeave={() => setHighlight(null)}
+                        onClick={() => {
+                            if (!alienDeployed) {
+                                toggleDeployMode();
+                            } else {
+                                // Toggle Highlight if deployed
+                                setHighlight(isHighlighted ? null : t);
+                            }
+                        }}
+                        onMouseEnter={() => {
+                            // Only allow highlight if already deployed
+                            if (alienDeployed) setHighlight(t);
+                        }}
+                        // Note: We removed onMouseLeave so the highlight "sticks" until toggled or canvas clicked
                     >
                         <div className="flex items-center gap-1 mb-0.5 md:mb-1 font-bold text-[9px] md:text-sm text-slate-300">
                             <SpeciesIcon type={t} />
@@ -90,10 +104,11 @@ export const StatCard: React.FC<StatCardProps> = ({ stats, maxPop, setHighlight,
             return (
             <div 
                 key={t} 
-                className="bg-slate-800 p-1 md:p-2 rounded-lg border border-slate-700 flex flex-col items-center relative overflow-hidden group hover:border-slate-500 transition-colors cursor-pointer h-14 md:h-auto"
+                className={`bg-slate-800 p-1 md:p-2 rounded-lg border flex flex-col items-center relative overflow-hidden group transition-colors cursor-pointer h-14 md:h-auto
+                    ${isHighlighted ? 'border-blue-400 ring-1 ring-blue-400 bg-slate-700' : 'border-slate-700 hover:border-slate-500'}
+                `}
                 onMouseEnter={() => setHighlight(t)}
-                onMouseLeave={() => setHighlight(null)}
-                onClick={() => setHighlight(t)}
+                onClick={() => setHighlight(isHighlighted ? null : t)} // Toggle logic
             >
                 {count < 10 && <div className="absolute inset-0 bg-red-500/10 animate-pulse pointer-events-none"></div>}
                 <div className="flex items-center gap-1 mb-0.5 md:mb-1 font-bold text-[9px] md:text-sm text-slate-300 w-full justify-center">

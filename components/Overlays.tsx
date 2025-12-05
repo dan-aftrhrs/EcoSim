@@ -59,20 +59,20 @@ const ONBOARDING_STEPS = [
     )
   },
   {
-    title: "The Eternal Balancer",
+    title: "The Cosmic Gardener",
     icon: <Zap size={48} className="text-teal-400" />,
     content: (
       <div className="space-y-4 text-center">
         <p className="text-slate-300">
-          You are a watcher, but you have one intervention tool.
+          You are a watcher, but you have one intervention tool. The Balancer acts as a <strong>Gardener</strong> for the simulation.
         </p>
         <div className="bg-slate-800 border border-slate-600 p-4 rounded-lg text-left">
             <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Zap size={16} className="text-teal-400"/>The Balancer</h4>
             <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
                 <li>Deployed <strong>once</strong> per simulation.</li>
-                <li><strong>Culls</strong> overpopulated species.</li>
-                <li><strong>Multiplies</strong> endangered species.</li>
-                <li><strong>Resurrects</strong> corpses into plants.</li>
+                <li><strong>Walks</strong> over water and through herds.</li>
+                <li><strong>Culls</strong> overgrown "weeds" (overpopulation).</li>
+                <li><strong>Plants</strong> new seeds for endangered species.</li>
             </ul>
         </div>
       </div>
@@ -87,7 +87,7 @@ const ONBOARDING_STEPS = [
         <p className="text-slate-400">
           If any species dies out completely, the simulation ends. 
           <br/>
-          Use the Balancer wisely.
+          Use the Gardener wisely.
         </p>
         <p className="text-xs text-slate-500 font-mono">Good Luck, Watcher.</p>
       </div>
